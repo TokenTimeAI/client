@@ -13,12 +13,17 @@ servers:
 proxy:
   ssl: true
   host: ttime.ai
+  # Enable caching for slow internet
+  cache: true
 
-# Use a local registry on the server (no external registry needed)
+# Use a local registry on the server accessed via SSH tunnel
+# This avoids external registry pulls on slow internet
+# SSH tunnel: ssh -f -N -L 5001:localhost:5001 root@91.98.82.37
 registry:
-  server: localhost:5000
-  username: ""
-  password: ""
+  server: localhost:5001
+  username: kamal
+  password:
+    - KAMAL_REGISTRY_PASSWORD
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
@@ -57,8 +62,9 @@ asset_path: /rails/public/assets
 # Configure the image builder.
 builder:
   arch: amd64
-  # Build image via SSH directly on the server (no external registry needed)
-  remote: ssh://root@91.98.82.37
+  # Cache images for faster rebuilds on slow internet
+  cache:
+    type: gha
 
 # Use a different ssh user than root
 # ssh:

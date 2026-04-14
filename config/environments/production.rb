@@ -16,10 +16,15 @@ Rails.application.configure do
   config.action_controller.perform_caching = true
 
   # Cache assets for far-future expiry since they are all digest stamped.
-  config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
+  # Aggressive caching for slow internet conditions
+  config.public_file_server.headers = {
+    "cache-control" => "public, max-age=#{1.year.to_i}, immutable",
+    "expires" => 1.year.from_now.httpdate
+  }
 
-  # Enable serving of images, stylesheets, and JavaScripts from an asset server.
-  # config.asset_host = "http://assets.example.com"
+  # Enable serving of images, stylesheets, and JavaScripts from asset server
+  # Uses same host but enables asset pipeline optimizations
+  config.asset_host = ENV["ASSET_HOST"] if ENV["ASSET_HOST"].present?
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
