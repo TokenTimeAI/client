@@ -1,0 +1,65 @@
+<% content_for :title, "Billing — ttime.ai" %>
+
+<div class="max-w-3xl mx-auto space-y-8">
+  <div>
+    <h1 class="text-2xl font-bold text-white">Billing</h1>
+    <p class="text-gray-400 text-sm mt-1">Choose the hosted personal plan or contact us for team billing.</p>
+  </div>
+
+  <div class="bg-gray-900 rounded-2xl border border-gray-800 p-8 space-y-6">
+    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div class="space-y-2">
+        <p class="text-xs uppercase tracking-[0.3em] text-indigo-300">Personal plan</p>
+        <h2 class="text-3xl font-semibold text-white"><%= @billing_config.personal_monthly_price_label %></h2>
+        <p class="text-gray-400 max-w-xl">Single-user access to ttime.ai with hosted Stripe Checkout, Stripe Billing Portal, and no self-serve team purchasing.</p>
+      </div>
+
+      <% if current_user.subscription_active? %>
+        <div class="rounded-xl border border-green-700/60 bg-green-900/20 px-4 py-3 text-sm text-green-200">
+          <div class="font-medium">Subscription active</div>
+          <div class="text-green-300/80 mt-1">
+            Status: <%= current_user.stripe_subscription_status.humanize %>
+            <% if current_user.subscription_current_period_end.present? %>
+              · Renews <%= l(current_user.subscription_current_period_end.to_date, format: :long) %>
+            <% end %>
+          </div>
+        </div>
+      <% else %>
+        <div class="rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-sm text-gray-300">
+          No active subscription yet.
+        </div>
+      <% end %>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="rounded-xl border border-gray-800 bg-gray-950 p-5">
+        <h3 class="text-lg font-medium text-white">Personal subscription</h3>
+        <ul class="mt-4 space-y-2 text-sm text-gray-400">
+          <li>• Hosted Stripe Checkout for the monthly personal plan</li>
+          <li>• Self-serve card, invoice, and cancellation management in Stripe</li>
+          <li>• One personal workspace for one user</li>
+        </ul>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <% if current_user.subscription_active? %>
+            <%= button_to "Manage subscription", portal_billing_path, method: :post, class: "bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 rounded-lg transition-colors" %>
+          <% else %>
+            <%= button_to "Start personal plan", checkout_billing_path, method: :post, class: "bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 rounded-lg transition-colors disabled:opacity-50", disabled: !@billing_config.checkout_ready? %>
+          <% end %>
+        </div>
+
+        <% unless @billing_config.checkout_ready? %>
+          <p class="mt-3 text-xs text-amber-300">Set STRIPE_SECRET_KEY and STRIPE_PERSONAL_MONTHLY_PRICE_ID to enable the hosted checkout flow.</p>
+        <% end %>
+      </div>
+
+      <div class="rounded-xl border border-gray-800 bg-gray-950 p-5">
+        <h3 class="text-lg font-medium text-white">Need a team plan?</h3>
+        <p class="mt-4 text-sm text-gray-400">Teams are not self-serve yet. Contact us if you want multi-seat billing, procurement, or a shared workspace rollout.</p>
+        <div class="mt-6">
+          <a href="mailto:founders@ttime.ai" class="text-sm text-indigo-400 hover:text-indigo-300">Contact us about teams</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
