@@ -8,6 +8,20 @@
     <div class="bg-gray-900 rounded-2xl border border-gray-800 p-8">
       <h2 class="text-xl font-semibold text-white mb-6">Create your account</h2>
 
+      <% oauth_providers = resource_class.omniauth_providers.select { |provider| Devise.omniauth_configs.key?(provider) } %>
+      <% if oauth_providers.any? %>
+        <%= render "devise/shared/oauth_buttons", resource_name: resource_name, providers: oauth_providers %>
+
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-800"></div>
+          </div>
+          <div class="relative flex justify-center text-xs uppercase tracking-[0.3em] text-gray-600">
+            <span class="bg-gray-900 px-3">or sign up with email</span>
+          </div>
+        </div>
+      <% end %>
+
       <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-5" }) do |f| %>
         <% resource.errors.full_messages.each do |msg| %>
           <div class="text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg px-4 py-2"><%= msg %></div>

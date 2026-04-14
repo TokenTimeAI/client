@@ -29,6 +29,34 @@ bin/rails server
 
 Visit `http://localhost:3000`, create an account, generate an API key.
 
+## OAuth Sign-In
+
+GitHub and Google sign-in are available through Devise OmniAuth. Set these environment variables before booting the app to enable the providers:
+
+```bash
+GITHUB_CLIENT_ID=your-github-oauth-app-client-id
+GITHUB_CLIENT_SECRET=your-github-oauth-app-client-secret
+GOOGLE_CLIENT_ID=your-google-oauth-client-id
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
+```
+
+Callback URLs:
+
+- GitHub: `http://localhost:3000/users/auth/github/callback`
+- Google: `http://localhost:3000/users/auth/google_oauth2/callback`
+
+Production uses the same paths on your deployed host, for example:
+
+- `https://your-app.example.com/users/auth/github/callback`
+- `https://your-app.example.com/users/auth/google_oauth2/callback`
+
+Account-linking behavior:
+
+- Existing local accounts are linked automatically only when the provider returns a verified email that matches an existing user.
+- Google sign-in requires `info.email_verified == true`.
+- GitHub sign-in only trusts verified addresses returned from `extra.all_emails`.
+- If the provider does not return a verified email, the app does not create or link an account silently; the user is sent back to the sign-in page with an actionable error.
+
 ## API Reference
 
 ### Authentication
@@ -201,6 +229,63 @@ TINYBIRD_TOKEN=p.eyJ...   # Workspace token
 TINYBIRD_API_URL=https://api.tinybird.co  # Default
 ```
 
+## Billing / Stripe setup
+
+The app supports exactly one hosted Stripe subscription for a **personal plan at $20/month**. Team billing is not self-serve; the in-app billing page sends team buyers to contact us instead.
+
+### Required Stripe env vars
+
+| Variable | Required | Description |
+|---|---|---|
+| `STRIPE_SECRET_KEY` | Yes | Secret API key used by the Stripe Ruby SDK for checkout + billing portal. |
+| `STRIPE_PERSONAL_MONTHLY_PRICE_ID` | Yes | Stripe Price ID for the $20/month recurring personal plan. |
+| `STRIPE_WEBHOOK_SECRET` | Yes | Signing secret for the `/stripe/webhooks` endpoint. |
+| `STRIPE_PUBLISHABLE_KEY` | Optional | Not required for the current hosted checkout/portal flow, but available if you later add client-side Stripe.js. |
+| `STRIPE_PERSONAL_MONTHLY_PRICE_CENTS` | Optional | Display-only fallback for the plan amount on the billing page. Defaults to `2000`. |
+| `STRIPE_PERSONAL_MONTHLY_PRICE_LABEL` | Optional | Display-only label shown on the billing page. Defaults to `$20.00/month`. |
+
+### Stripe setup steps
+
+1. Create a recurring monthly product/price in Stripe for the personal plan at **$20/month**.
+2. Save the resulting Price ID into `STRIPE_PERSONAL_MONTHLY_PRICE_ID`.
+3. Set `STRIPE_SECRET_KEY` in your environment.
+4. Point a Stripe webhook endpoint at `POST /stripe/webhooks`. Subscribe at minimum to:
+   - `checkout.session.completed`
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+5. Save the Stripe webhook signing secret as `STRIPE_WEBHOOK_SECRET`.
+6. Signed-in users can then visit `/billing` to start checkout or manage an existing subscription in the Stripe Billing Portal.
+7. Team customers should use the contact link on `/billing`; there is no self-serve team checkout flow.
+
+### Local webhook development
+
+For local testing, run Stripe's webhook forwarder and point it at the Rails app:
+
+```bash
+stripe listen --forward-to localhost:3000/stripe/webhooks
+```
+
+Copy the reported signing secret into `STRIPE_WEBHOOK_SECRET`.
+
+Create the personal plan in Stripe first, then export the matching app configuration:
+
+```bash
+export STRIPE_SECRET_KEY=sk_test_...
+export STRIPE_WEBHOOK_SECRET=whsec_...
+export STRIPE_PERSONAL_MONTHLY_PRICE_ID=price_...
+export STRIPE_PERSONAL_MONTHLY_PRICE_LABEL='$20.00/month'
+```
+
+In development you can then:
+
+```bash
+bin/rails server
+stripe listen --forward-to localhost:3000/stripe/webhooks
+```
+
+Sign in, open `http://localhost:3000/billing`, and start checkout from the billing page. After completing a test checkout, use the Stripe CLI to replay or trigger subscription lifecycle events against the webhook endpoint as needed.
+
 ## Environment Variables
 
 | Variable              | Description                                     | Default                      |
@@ -212,6 +297,10 @@ TINYBIRD_API_URL=https://api.tinybird.co  # Default
 | `TINYBIRD_TOKEN`      | Tinybird workspace token (global fallback)      | —                            |
 | `TINYBIRD_API_URL`    | Tinybird API base URL                           | `https://api.tinybird.co`    |
 | `RAILS_MASTER_KEY`    | Rails credentials decryption key                | —                            |
+| `GITHUB_CLIENT_ID`    | GitHub OAuth app client ID for Devise OmniAuth  | —                            |
+| `GITHUB_CLIENT_SECRET`| GitHub OAuth app client secret                  | —                            |
+| `GOOGLE_CLIENT_ID`    | Google OAuth client ID for Devise OmniAuth      | —                            |
+| `GOOGLE_CLIENT_SECRET`| Google OAuth client secret                      | —                            |
 
 ## Development
 
