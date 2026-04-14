@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_14_001714) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_14_020001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -68,14 +68,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_001714) do
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.string "name"
+    t.string "provider"
     t.datetime "remember_created_at"
     t.datetime "reset_password_sent_at"
     t.string "reset_password_token"
+    t.boolean "subscription_cancel_at_period_end", default: false, null: false
+    t.datetime "subscription_current_period_end"
+    t.string "stripe_customer_id"
+    t.string "stripe_price_id"
+    t.string "stripe_subscription_id"
+    t.string "stripe_subscription_status"
     t.string "timezone", default: "UTC"
     t.string "tinybird_token"
+    t.string "uid"
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["provider", "uid"], name: "index_users_on_provider_and_uid", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["stripe_customer_id"], name: "index_users_on_stripe_customer_id", unique: true
+    t.index ["stripe_subscription_id"], name: "index_users_on_stripe_subscription_id", unique: true
   end
 
   add_foreign_key "api_keys", "users"

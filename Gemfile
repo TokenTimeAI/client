@@ -21,6 +21,10 @@ gem "tailwindcss-rails"
 
 # Authentication
 gem "devise"
+gem "omniauth-github"
+gem "omniauth-google-oauth2"
+gem "omniauth-rails_csrf_protection"
+gem "stripe"
 
 # ULID primary keys
 gem "ulid"
