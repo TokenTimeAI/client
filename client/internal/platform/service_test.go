@@ -9,17 +9,22 @@ import (
 )
 
 func TestInstallSystemdRemovesUnitFileWhenEnableFails(t *testing.T) {
-	t.Parallel()
-
+	// Note: This test modifies global state, cannot run in parallel
 	tempDir := t.TempDir()
 	manager := &UserServiceManager{}
 
 	restore := stubPlatformTestEnv(t, tempDir, func(name string, args ...string) error {
-		if name == "systemctl" && len(args) >= 3 && args[0] == "--user" && args[1] == "daemon-reload" {
+		// daemon-reload should succeed
+		if name == "systemctl" && len(args) >= 2 && args[0] == "--user" && args[1] == "daemon-reload" {
 			return nil
 		}
-		if name == "systemctl" && len(args) >= 4 && args[0] == "--user" && args[1] == "enable" && args[2] == "--now" {
+		// enable --now should fail
+		if name == "systemctl" && len(args) >= 3 && args[0] == "--user" && args[1] == "enable" {
 			return fmt.Errorf("failed to connect to bus")
+		}
+		// disable --now during cleanup should succeed
+		if name == "systemctl" && len(args) >= 3 && args[0] == "--user" && args[1] == "disable" {
+			return nil
 		}
 		return nil
 	})
@@ -40,12 +45,12 @@ func TestInstallSystemdRemovesUnitFileWhenEnableFails(t *testing.T) {
 }
 
 func TestStatusLinuxRequiresEnabledOrActiveUnit(t *testing.T) {
-	t.Parallel()
-
+	// Note: This test modifies global state, cannot run in parallel
 	tempDir := t.TempDir()
 	manager := &UserServiceManager{}
 
 	restore := stubPlatformTestEnv(t, tempDir, func(name string, args ...string) error {
+		// Both is-enabled and is-active should fail to simulate unconfirmed unit
 		if name == "systemctl" && len(args) >= 3 && args[0] == "--user" && (args[1] == "is-enabled" || args[1] == "is-active") {
 			return fmt.Errorf("failed to connect to bus")
 		}
@@ -74,15 +79,20 @@ func TestStatusLinuxRequiresEnabledOrActiveUnit(t *testing.T) {
 }
 
 func TestStatusLinuxReportsInstalledWhenSystemdConfirmsUnit(t *testing.T) {
-	t.Parallel()
-
+	// Note: This test modifies global state, cannot run in parallel
 	tempDir := t.TempDir()
 	manager := &UserServiceManager{}
 
+	callCount := make(map[string]int)
 	restore := stubPlatformTestEnv(t, tempDir, func(name string, args ...string) error {
+		cmdKey := name + " " + strings.Join(args, " ")
+		callCount[cmdKey]++
+
+		// is-enabled should succeed - this confirms the unit is installed
 		if name == "systemctl" && len(args) >= 3 && args[0] == "--user" && args[1] == "is-enabled" && args[2] == systemdUnit {
 			return nil
 		}
+		// is-active will fail (unit not running) - that's ok
 		if name == "systemctl" && len(args) >= 3 && args[0] == "--user" && args[1] == "is-active" {
 			return fmt.Errorf("inactive")
 		}
@@ -106,6 +116,7 @@ func TestStatusLinuxReportsInstalledWhenSystemdConfirmsUnit(t *testing.T) {
 		t.Fatalf("Status: %v", err)
 	}
 	if !status.Installed {
+		t.Logf("is-enabled call count: %d", callCount["systemctl --user is-enabled ttime.service"])
 		t.Fatal("expected status to report installed=true when systemd confirms the unit")
 	}
 }

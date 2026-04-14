@@ -16,6 +16,7 @@ import (
 	"github.com/ttime-ai/ttime/client/internal/queue"
 	"github.com/ttime-ai/ttime/client/internal/scanner"
 	"github.com/ttime-ai/ttime/client/internal/service"
+	"github.com/ttime-ai/ttime/client/internal/updater"
 )
 
 func Run(ctx context.Context, args []string) int {
@@ -45,6 +46,8 @@ func Run(ctx context.Context, args []string) int {
 		return runAgents(ctx, paths, args[1:])
 	case "scan":
 		return runScan(ctx, paths, args[1:])
+	case "update":
+		return runUpdate(ctx, paths, args[1:])
 	case "-h", "--help", "help":
 		printUsage()
 		return 0
@@ -286,6 +289,67 @@ func runScan(ctx context.Context, paths config.Paths, args []string) int {
 	return 0
 }
 
+func runUpdate(ctx context.Context, paths config.Paths, args []string) int {
+	flags := flag.NewFlagSet("update", flag.ContinueOnError)
+	flags.SetOutput(os.Stderr)
+	checkOnly := flags.Bool("check", false, "only check for updates, don't install")
+	autoYes := flags.Bool("yes", false, "automatically confirm update installation")
+	if err := flags.Parse(args); err != nil {
+		return 1
+	}
+
+	cfg, err := config.LoadOrDefault(paths.ConfigFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
+		return 1
+	}
+
+	// Get current version from ldflags or default to "dev"
+	version := os.Getenv("TTIME_VERSION")
+	if version == "" {
+		version = "dev"
+	}
+
+	u := updater.New(version, cfg.ServerURL)
+	result, err := u.CheckForUpdate()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to check for updates: %v\n", err)
+		return 1
+	}
+
+	if !result.UpdateAvailable {
+		fmt.Printf("✓ ttime is up to date (version %s)\n", result.CurrentVersion)
+		return 0
+	}
+
+	fmt.Printf("Update available: %s → %s\n", result.CurrentVersion, result.LatestVersion)
+	fmt.Printf("Download: %s\n", result.ReleaseURL)
+
+	if *checkOnly {
+		return 0
+	}
+
+	// Prompt for confirmation unless --yes
+	if !*autoYes {
+		fmt.Print("Install update? [y/N] ")
+		var response string
+		fmt.Scanln(&response)
+		if response != "y" && response != "Y" {
+			fmt.Println("Update cancelled.")
+			return 0
+		}
+	}
+
+	fmt.Printf("Downloading ttime %s...\n", result.LatestVersion)
+	if err := u.PerformUpdate(result.Asset); err != nil {
+		fmt.Fprintf(os.Stderr, "update failed: %v\n", err)
+		return 1
+	}
+
+	fmt.Printf("✓ Successfully updated to ttime %s\n", result.LatestVersion)
+	return 0
+}
+
 func printUsage() {
 	fmt.Fprintf(os.Stderr, `ttime - local heartbeat daemon client
 
@@ -295,6 +359,7 @@ Usage:
   ttime daemon [--once] [--no-scan]
   ttime agents          # list detected AI agents
   ttime scan [--agent <name>]  # scan agent databases
+  ttime update [--check] [--yes]  # check for or install updates
   ttime install
   ttime uninstall
 `)
