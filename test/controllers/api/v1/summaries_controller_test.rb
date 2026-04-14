@@ -8,7 +8,7 @@ class Api::V1::SummariesControllerTest < ActionDispatch::IntegrationTest
     # Create test heartbeats within the last hour
     now = Time.now
     @project = @user.projects.create!(name: "test-project")
-    [0, 30, 60, 120, 180].each_with_index do |seconds_ago, i|
+    [ 0, 30, 60, 120, 180 ].each_with_index do |seconds_ago, i|
       @user.heartbeat_events.create!(
         agent_type: i.even? ? "claude_code" : "codex",
         entity: "file#{i}.rb",
