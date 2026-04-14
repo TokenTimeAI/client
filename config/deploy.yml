@@ -12,7 +12,7 @@ servers:
 
 # Enable SSL auto certification via Let's Encrypt
 proxy:
-  ssl: true
+  ssl: false
   host: ttime.ai
 
 # Use the remote server's registry directly
