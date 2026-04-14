@@ -8,8 +8,11 @@ Rails.application.routes.draw do
   get "install.sh", to: "install_scripts#install"
   get "install.ps1", to: "install_scripts#windows"
 
+  # Marketing / Home
+  root "home#index"
+
   # Dashboard
-  root "dashboard#index"
+  get "dashboard", to: "dashboard#index"
 
   # Web UI
   resources :projects

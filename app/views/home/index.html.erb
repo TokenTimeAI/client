@@ -1,0 +1,265 @@
+<% content_for :title, "TokenTime.ai — WakaTime for AI Agents" %>
+
+<!-- Hero Section -->
+<section class="relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-b from-indigo-900/20 to-transparent"></div>
+  <div class="relative max-w-6xl mx-auto px-6 py-20 lg:py-32">
+    <div class="text-center max-w-3xl mx-auto">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-900/30 border border-indigo-700/30 text-indigo-300 text-sm mb-8">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Now tracking agents for 100+ developers
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+        <span class="bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">
+          WakaTime for AI Agents
+        </span>
+      </h1>
+      <p class="text-lg sm:text-xl text-gray-400 mb-10 leading-relaxed">
+        Track time, tokens, and costs across all your AI coding agents. 
+        Know exactly how much Cursor, Copilot, Claude Code, and other agents 
+        are working—and costing—you.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <%= link_to new_user_registration_path, class: "inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-xl font-semibold transition-all shadow-lg shadow-indigo-900/20" do %>
+          Start Tracking Free
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        <% end %>
+        <%= link_to "#how-it-works", class: "inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-8 py-4 rounded-xl font-semibold transition-all border border-gray-700" do %>
+          See How It Works
+        <% end %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Bar -->
+<section class="border-y border-gray-800 bg-gray-900/30">
+  <div class="max-w-6xl mx-auto px-6 py-12">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <div>
+        <div class="text-3xl font-bold text-white">5+</div>
+        <div class="text-sm text-gray-400 mt-1">Agent Platforms</div>
+      </div>
+      <div>
+        <div class="text-3xl font-bold text-white">1M+</div>
+        <div class="text-sm text-gray-400 mt-1">Tokens Tracked</div>
+      </div>
+      <div>
+        <div class="text-3xl font-bold text-white">WakaTime</div>
+        <div class="text-sm text-gray-400 mt-1">API Compatible</div>
+      </div>
+      <div>
+        <div class="text-3xl font-bold text-white">&lt;1s</div>
+        <div class="text-sm text-gray-400 mt-1">Local Sync</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Supported Agents -->
+<section id="how-it-works" class="py-20 lg:py-32">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl font-bold mb-4">Works With Your Agents</h2>
+      <p class="text-gray-400 max-w-2xl mx-auto">One CLI. Every agent. Automatic tracking with zero configuration.</p>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Cursor -->
+      <div class="group bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-indigo-500/50 transition-all">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">Cursor</h3>
+        <p class="text-gray-400 text-sm">Track tabs, composer sessions, and inline edits automatically.</p>
+      </div>
+      <!-- Claude Code -->
+      <div class="group bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-orange-500/50 transition-all">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">Claude Code</h3>
+        <p class="text-gray-400 text-sm">Monitor terminal sessions and code modifications in real-time.</p>
+      </div>
+      <!-- GitHub Copilot -->
+      <div class="group bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">GitHub Copilot</h3>
+        <p class="text-gray-400 text-sm">Measure suggestion acceptance rates and time saved.</p>
+      </div>
+      <!-- Cline -->
+      <div class="group bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-green-500/50 transition-all">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">Cline</h3>
+        <p class="text-gray-400 text-sm">Track VS Code agent sessions and task completions.</p>
+      </div>
+      <!-- OpenCode -->
+      <div class="group bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-pink-500/50 transition-all">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">OpenCode</h3>
+        <p class="text-gray-400 text-sm">Monitor local-first agent interactions and context usage.</p>
+      </div>
+      <!-- More -->
+      <div class="group bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-gray-600/50 transition-all">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-600 to-gray-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">And More</h3>
+        <p class="text-gray-400 text-sm">Extensible architecture. New agents added regularly.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="py-20 lg:py-32 border-t border-gray-800">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+      <div class="mb-12 lg:mb-0">
+        <h2 class="text-3xl font-bold mb-6">Know Your True AI Costs</h2>
+        <div class="space-y-6">
+          <div class="flex gap-4">
+            <div class="w-10 h-10 rounded-lg bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold mb-1">Time Tracking</h3>
+              <p class="text-gray-400 text-sm">See exactly how long you spend with each agent. Daily, weekly, and monthly breakdowns.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="w-10 h-10 rounded-lg bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold mb-1">Token Usage</h3>
+              <p class="text-gray-400 text-sm">Track prompt and completion tokens across all platforms. Know which agents are efficient.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="w-10 h-10 rounded-lg bg-emerald-900/50 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold mb-1">Cost Estimation</h3>
+              <p class="text-gray-400 text-sm">Real-time cost calculations based on current API pricing. Budget before you overspend.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="absolute -inset-4 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-3xl blur-2xl"></div>
+        <div class="relative bg-gray-900 rounded-2xl border border-gray-800 p-6">
+          <div class="flex items-center gap-2 mb-4 pb-4 border-b border-gray-800">
+            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            <span class="ml-4 text-sm text-gray-500">ttime dashboard</span>
+          </div>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-blue-500/20 flex items-center justify-center">
+                  <span class="text-xs font-bold text-blue-400">Cu</span>
+                </div>
+                <div>
+                  <div class="text-sm font-medium">Cursor</div>
+                  <div class="text-xs text-gray-500">Today</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-medium">2h 34m</div>
+                <div class="text-xs text-gray-500">$4.20 est.</div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-orange-500/20 flex items-center justify-center">
+                  <span class="text-xs font-bold text-orange-400">Cl</span>
+                </div>
+                <div>
+                  <div class="text-sm font-medium">Claude Code</div>
+                  <div class="text-xs text-gray-500">Today</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-medium">1h 12m</div>
+                <div class="text-xs text-gray-500">$2.85 est.</div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-purple-500/20 flex items-center justify-center">
+                  <span class="text-xs font-bold text-purple-400">Co</span>
+                </div>
+                <div>
+                  <div class="text-sm font-medium">Copilot</div>
+                  <div class="text-xs text-gray-500">Today</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-medium">45m</div>
+                <div class="text-xs text-gray-500">$0.00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WakaTime Compatible -->
+<section class="py-20 lg:py-32 border-t border-gray-800">
+  <div class="max-w-6xl mx-auto px-6 text-center">
+    <h2 class="text-3xl font-bold mb-6">Drop-in WakaTime Replacement</h2>
+    <p class="text-gray-400 max-w-2xl mx-auto mb-12">
+      TokenTime implements the WakaTime API. If your tool supports WakaTime, 
+      it supports TokenTime. Just change the API URL.
+    </p>
+    <div class="bg-gray-900 rounded-2xl border border-gray-800 p-6 max-w-2xl mx-auto">
+      <div class="flex items-center gap-2 mb-4 text-sm text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3"/></svg>
+        One-line setup
+      </div>
+      <code class="block bg-gray-950 rounded-lg p-4 text-left text-sm font-mono text-gray-300 overflow-x-auto">
+        curl -fsSL https://ttime.ai/install.sh | sh
+      </code>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="py-20 lg:py-32 border-t border-gray-800">
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <h2 class="text-3xl font-bold mb-6">Start Tracking Your Agents</h2>
+    <p class="text-gray-400 mb-10">Free for personal use. No credit card required.</p>
+    <%= link_to new_user_registration_path, class: "inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-5 rounded-xl font-semibold text-lg transition-all shadow-xl shadow-indigo-900/20" do %>
+      Create Free Account
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    <% end %>
+    <p class="text-gray-500 text-sm mt-6">Self-hosted option available for teams</p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-gray-800 py-12">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <%= image_tag "logo-main.svg", alt: "TokenTime", class: "h-6 w-auto opacity-70" %>
+      </div>
+      <div class="flex items-center gap-6 text-sm text-gray-500">
+        <%= link_to "Dashboard", dashboard_path, class: "hover:text-gray-300 transition-colors" %>
+        <%= link_to "Documentation", "#", class: "hover:text-gray-300 transition-colors" %>
+        <%= link_to "GitHub", "https://github.com", class: "hover:text-gray-300 transition-colors" %>
+      </div>
+      <p class="text-sm text-gray-600">© 2025 TokenTime.ai</p>
+    </div>
+  </div>
+</footer>
