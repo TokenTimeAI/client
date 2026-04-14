@@ -33,7 +33,9 @@ If you do not use Homebrew, `ttime install` and `ttime uninstall` write and remo
 ```bash
 ttime setup
 ttime status
-ttime daemon --once
+ttime daemon [--once] [--no-scan]
+ttime agents          # list detected AI agents
+ttime scan [--agent <name>]  # scan agent databases
 ttime install
 ttime uninstall
 ```
@@ -231,4 +233,62 @@ Both services execute:
 
 ```bash
 ttime daemon
+```
+
+---
+
+## Native Agent Scanning
+
+The daemon includes **native agent scanning** that automatically detects and reads conversation data from installed AI agents. This captures complete conversation history including total token usage, model information, cost tracking, and conversation IDs.
+
+### How It Works
+
+1. **Detection**: On startup, the daemon scans for known agent configuration directories
+2. **Scanning**: Every 5 minutes, it reads conversation databases (SQLite, JSON)
+3. **Incremental**: Only new conversations since last scan are reported
+4. **Deduplication**: Events tracked by message ID to avoid duplicates
+
+### Supported Agents
+
+| Agent | Data Location | Format |
+|-------|--------------|--------|
+| **Cosine/COS** | `~/.cosine/sessions/*.json` | JSON |
+| **Cline** | VS Code extension storage | SQLite/JSON |
+| **Cursor** | `~/Library/Application Support/Cursor` | JSON |
+| **Claude Code** | `~/.claude/projects/*/chat_history.json` | JSON |
+| **OpenCode** | `~/.opencode/conversations/*.json` | JSON |
+| **GitHub Copilot CLI** | `~/.config/github-copilot/usage.json` | JSON |
+
+### New CLI Commands
+
+```bash
+# List available and detected agents
+ttime agents
+
+# Scan agents once and display results
+ttime scan
+
+# Scan only specific agent
+ttime scan --agent cosine
+
+# Run daemon without scanning
+ttime daemon --no-scan
+```
+
+### New Heartbeat Fields
+
+Agent scanning adds these fields to heartbeats:
+
+```json
+{
+  "agent_type": "cosine",
+  "type": "conversation",
+  "conversation_id": "conv-123",
+  "message_id": "msg-456",
+  "prompt_tokens": 1500,
+  "completion_tokens": 800,
+  "total_tokens": 2300,
+  "model": "claude-3-5-sonnet",
+  "cost_usd": 0.0075
+}
 ```

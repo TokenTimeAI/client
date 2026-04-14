@@ -14,19 +14,28 @@ import (
 )
 
 type Event struct {
-	Entity       string         `json:"entity"`
-	Type         string         `json:"type"`
-	Project      string         `json:"project,omitempty"`
-	Branch       string         `json:"branch,omitempty"`
-	Language     string         `json:"language,omitempty"`
-	AgentType    string         `json:"agent_type,omitempty"`
-	Time         float64        `json:"time"`
-	IsWrite      bool           `json:"is_write,omitempty"`
-	TokensUsed   int            `json:"tokens_used,omitempty"`
-	LinesAdded   int            `json:"lines_added,omitempty"`
-	LinesDeleted int            `json:"lines_deleted,omitempty"`
-	CostUSD      float64        `json:"cost_usd,omitempty"`
-	Metadata     map[string]any `json:"metadata,omitempty"`
+	Entity           string         `json:"entity"`
+	Type             string         `json:"type"`
+	Project          string         `json:"project,omitempty"`
+	Branch           string         `json:"branch,omitempty"`
+	Language         string         `json:"language,omitempty"`
+	AgentType        string         `json:"agent_type,omitempty"`
+	Time             float64        `json:"time"`
+	Duration         float64        `json:"duration,omitempty"`
+	IsWrite          bool           `json:"is_write,omitempty"`
+	TokensUsed       int            `json:"tokens_used,omitempty"`
+	LinesAdded       int            `json:"lines_added,omitempty"`
+	LinesDeleted     int            `json:"lines_deleted,omitempty"`
+	CostUSD          float64        `json:"cost_usd,omitempty"`
+	Metadata         map[string]any `json:"metadata,omitempty"`
+
+	// Conversation tracking fields
+	ConversationID   string         `json:"conversation_id,omitempty"`
+	MessageID        string         `json:"message_id,omitempty"`
+	PromptTokens     int            `json:"prompt_tokens,omitempty"`
+	CompletionTokens int            `json:"completion_tokens,omitempty"`
+	TotalTokens      int            `json:"total_tokens,omitempty"`
+	Model            string         `json:"model,omitempty"`
 }
 
 type JSONLCollector struct {
@@ -134,19 +143,26 @@ func parseEvent(line []byte) (Event, error) {
 	}
 
 	return Event{
-		Entity:       getString(body, "entity"),
-		Type:         getString(body, "type"),
-		Project:      getString(body, "project"),
-		Branch:       getString(body, "branch"),
-		Language:     getString(body, "language"),
-		AgentType:    getString(body, "agent_type"),
-		Time:         getFloat(body, "time"),
-		IsWrite:      getBool(body, "is_write"),
-		TokensUsed:   getInt(body, "tokens_used"),
-		LinesAdded:   getInt(body, "lines_added"),
-		LinesDeleted: getInt(body, "lines_deleted"),
-		CostUSD:      getFloat(body, "cost_usd"),
-		Metadata:     getMap(body, "metadata"),
+		Entity:           getString(body, "entity"),
+		Type:             getString(body, "type"),
+		Project:          getString(body, "project"),
+		Branch:           getString(body, "branch"),
+		Language:         getString(body, "language"),
+		AgentType:        getString(body, "agent_type"),
+		Time:             getFloat(body, "time"),
+		Duration:         getFloat(body, "duration"),
+		IsWrite:          getBool(body, "is_write"),
+		TokensUsed:       getInt(body, "tokens_used"),
+		LinesAdded:       getInt(body, "lines_added"),
+		LinesDeleted:     getInt(body, "lines_deleted"),
+		CostUSD:          getFloat(body, "cost_usd"),
+		Metadata:         getMap(body, "metadata"),
+		ConversationID:   getString(body, "conversation_id"),
+		MessageID:        getString(body, "message_id"),
+		PromptTokens:     getInt(body, "prompt_tokens"),
+		CompletionTokens: getInt(body, "completion_tokens"),
+		TotalTokens:      getInt(body, "total_tokens"),
+		Model:            getString(body, "model"),
 	}, nil
 }
 
