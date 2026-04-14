@@ -15,6 +15,7 @@ import (
 	"github.com/ttime-ai/ttime/client/internal/platform"
 	"github.com/ttime-ai/ttime/client/internal/queue"
 	"github.com/ttime-ai/ttime/client/internal/scanner"
+	_ "github.com/ttime-ai/ttime/client/internal/scanner/detectors" // Register all detectors
 	"github.com/ttime-ai/ttime/client/internal/service"
 	"github.com/ttime-ai/ttime/client/internal/updater"
 )

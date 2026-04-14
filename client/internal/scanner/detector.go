@@ -7,33 +7,15 @@ import (
 	"path/filepath"
 )
 
-// Detector is implemented by each agent scanner
-type Detector interface {
-	// Name returns the agent identifier (e.g., "cosine", "cline")
-	Name() string
-
-	// Detect returns true if this agent's data exists on the system
-	Detect(ctx context.Context) (bool, error)
-
-	// Scan retrieves new results since the provided state
-	Scan(ctx context.Context, state SourceState) ([]ScanResult, SourceState, error)
-
-	// DefaultPaths returns the expected paths for this agent's data
-	DefaultPaths() []string
-}
-
-// Registry holds all registered detectors
-var Registry []Detector
-
-// Register adds a detector to the registry
-func Register(d Detector) {
-	Registry = append(Registry, d)
-}
-
 // FindDetectors returns all detectors that detected their agent
+// Uses the global registry
 func FindDetectors(ctx context.Context) ([]Detector, error) {
 	var detected []Detector
-	for _, d := range Registry {
+	for _, name := range globalRegistry.List() {
+		d, ok := globalRegistry.Get(name)
+		if !ok {
+			continue
+		}
 		ok, err := d.Detect(ctx)
 		if err != nil {
 			// Log but continue - don't fail entire scan for one agent
@@ -44,6 +26,33 @@ func FindDetectors(ctx context.Context) ([]Detector, error) {
 		}
 	}
 	return detected, nil
+}
+
+// GetDetectedInfos returns info about all detectors and their detection status
+func GetDetectedInfos(ctx context.Context) []DetectorInfo {
+	var infos []DetectorInfo
+	for _, name := range globalRegistry.List() {
+		d, ok := globalRegistry.Get(name)
+		if !ok {
+			continue
+		}
+		
+		detected, _ := d.Detect(ctx)
+		info := DetectorInfo{
+			Name:        d.Name(),
+			Description: d.Description(),
+			Detected:    detected,
+			Paths:       d.DefaultPaths(),
+		}
+		
+		// If detected and has a base detector with found path
+		if bd, ok := d.(interface{ FoundPath() string }); ok && detected {
+			info.FoundPath = bd.FoundPath()
+		}
+		
+		infos = append(infos, info)
+	}
+	return infos
 }
 
 // ExpandHome replaces ~ with home directory
@@ -68,4 +77,18 @@ func FileExists(path string) bool {
 func DirExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.IsDir()
+}
+
+// FindFirstPath returns the first path that exists from a list
+func FindFirstPath(paths []string) string {
+	for _, p := range paths {
+		expanded, err := ExpandHome(p)
+		if err != nil {
+			continue
+		}
+		if DirExists(expanded) || FileExists(expanded) {
+			return expanded
+		}
+	}
+	return ""
 }
