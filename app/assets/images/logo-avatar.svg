@@ -8,6 +8,13 @@
       <stop offset="0%" style="stop-color:#fbbf24"/>
       <stop offset="100%" style="stop-color:#f59e0b"/>
     </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
   
   <!-- Background circle -->
@@ -27,16 +34,20 @@
   
   <!-- Double T Lettermark -->
   <g fill="white">
+    <!-- First T -->
     <rect x="166" y="140" width="80" height="20" rx="4"/>
     <rect x="196" y="140" width="20" height="180" rx="4"/>
+    
+    <!-- Second T (slightly offset and smaller) -->
     <rect x="246" y="170" width="80" height="20" rx="4"/>
     <rect x="276" y="170" width="20" height="150" rx="4"/>
   </g>
   
-  <!-- Digital tokens -->
-  <circle cx="340" cy="140" r="18" fill="url(#accentGradient)"/>
+  <!-- Digital tokens/coins -->
+  <circle cx="340" cy="140" r="18" fill="url(#accentGradient)" filter="url(#glow)"/>
   <circle cx="370" cy="180" r="12" fill="url(#accentGradient)" opacity="0.8"/>
   <circle cx="150" cy="340" r="14" fill="url(#accentGradient)" opacity="0.9"/>
+  <circle cx="380" cy="320" r="10" fill="url(#accentGradient)" opacity="0.7"/>
   
   <!-- Clock hands -->
   <g stroke="white" stroke-width="8" stroke-linecap="round">

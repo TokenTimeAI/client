@@ -11,9 +11,8 @@
 
     <%= yield :head %>
 
-    <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="apple-touch-icon" href="/icon.svg">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
@@ -25,11 +24,8 @@
     <% if user_signed_in? %>
       <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
         <div class="flex items-center gap-6">
-          <%= link_to root_path, class: "text-indigo-400 font-bold text-xl flex items-center gap-2" do %>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 14.414l-4.707-4.707 1.414-1.414L11 13.586l6.293-6.293 1.414 1.414L11 16.414z"/>
-            </svg>
-            ttime.ai
+          <%= link_to root_path, class: "flex items-center gap-2" do %>
+            <%= image_tag "logo-main.svg", alt: "TokenTime.ai", class: "h-8 w-auto" %>
           <% end %>
           <div class="flex items-center gap-4 text-sm">
             <%= link_to "Dashboard", root_path, class: "text-gray-300 hover:text-white transition-colors #{current_page?(root_path) ? 'text-white font-medium' : ''}" %>
