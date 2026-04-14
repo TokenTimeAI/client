@@ -1,7 +1,8 @@
 # Name of your application. Used to uniquely configure containers.
 service: ttime
 
-# Name of the container image.
+# Use local image built on the server - no registry needed
+# Image is built directly on the remote host
 image: ttime
 
 # Deploy to these servers.
@@ -13,14 +14,10 @@ servers:
 proxy:
   ssl: true
   host: ttime.ai
-  # Enable caching for slow internet
-  cache: true
 
-# Use a local registry on the server accessed via SSH tunnel
-# This avoids external registry pulls on slow internet
-# SSH tunnel: ssh -f -N -L 5001:localhost:5001 root@91.98.82.37
+# Use the remote server's registry directly
 registry:
-  server: localhost:5001
+  server: 91.98.82.37:5001
   username: kamal
   password:
     - KAMAL_REGISTRY_PASSWORD
@@ -59,12 +56,10 @@ volumes:
 # version inside the asset_path.
 asset_path: /rails/public/assets
 
-# Configure the image builder.
+# Build on the remote server - image stays on server for deploy
 builder:
   arch: amd64
-  # Cache images for faster rebuilds on slow internet
-  cache:
-    type: gha
+  remote: ssh://root@91.98.82.37
 
 # Use a different ssh user than root
 # ssh:
@@ -81,6 +76,6 @@ accessories:
         POSTGRES_USER: ttime
         POSTGRES_DB: ttime_production
       secret:
-        - TTIME_DATABASE_PASSWORD
+        - POSTGRES_PASSWORD
     directories:
       - data:/var/lib/postgresql/data
