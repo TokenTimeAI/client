@@ -44,11 +44,6 @@ func (d *CursorDetector) Detect(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (d *CursorDetector) Scan(ctx context.Context, state SourceState) ([]ScanResult, SourceState, error) {
-	if d.dataDir == "" {
-		return nil, state, nil
-	}
-
 func (d *CursorDetector) Scan(ctx context.Context, state scanner.SourceState) ([]scanner.ScanResult, scanner.SourceState, error) {
 	if d.dataDir == "" {
 		return nil, state, nil
@@ -69,7 +64,6 @@ func (d *CursorDetector) Scan(ctx context.Context, state scanner.SourceState) ([
 
 	var results []scanner.ScanResult
 	newState := state
-	newState.LastScanTime = time.Now().Unix()
 
 	for _, workspaceEntry := range entries {
 		if !workspaceEntry.IsDir() {
@@ -155,7 +149,4 @@ func (d *CursorDetector) Scan(ctx context.Context, state scanner.SourceState) ([
 
 func init() {
 	scanner.Register(NewCursorDetector)
-}
-
-	return results, newState, nil
 }

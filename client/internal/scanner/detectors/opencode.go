@@ -58,7 +58,6 @@ func (d *OpenCodeDetector) Scan(ctx context.Context, state scanner.SourceState) 
 
 	var results []scanner.ScanResult
 	newState := state
-	newState.LastScanTime = time.Now().Unix()
 
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {

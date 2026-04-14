@@ -60,7 +60,6 @@ func (d *ClaudeDetector) Scan(ctx context.Context, state scanner.SourceState) ([
 
 	var results []scanner.ScanResult
 	newState := state
-	newState.LastScanTime = time.Now().Unix()
 
 	for _, projectEntry := range entries {
 		if !projectEntry.IsDir() {

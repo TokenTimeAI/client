@@ -85,7 +85,6 @@ func (d *CopilotDetector) Scan(ctx context.Context, state scanner.SourceState) (
 
 	var results []scanner.ScanResult
 	newState := state
-	newState.LastScanTime = time.Now().Unix()
 
 	for _, session := range usage.Sessions {
 		if session.StartTime <= state.LastScanTime {

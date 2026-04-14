@@ -1,0 +1,30 @@
+{
+  "name": "ttime",
+  "version": "1.0.0",
+  "description": "**WakaTime for AI coding agents.** Track tokens, sessions, languages, and edits from Claude Code, Codex, Cursor, Copilot, and more.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PandelisZ/ttime.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/PandelisZ/ttime/issues"
+  },
+  "homepage": "https://github.com/PandelisZ/ttime#readme",
+  "devDependencies": {
+    "@tinybirdco/sdk": "^0.0.66",
+    "typescript": "^6.0.2"
+  }
+}

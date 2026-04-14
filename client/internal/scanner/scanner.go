@@ -167,11 +167,6 @@ func (s *Scanner) RunLoop(ctx context.Context, callback func([]ScanResult)) erro
 	}
 }
 
-// ListDetectors returns all registered detector names
-func ListDetectors() []string {
-	return globalRegistry.List()
-}
-
 // GetDetectorInfo returns info about all detectors
 func GetDetectorInfo(ctx context.Context) []DetectorInfo {
 	return GetDetectedInfos(ctx)

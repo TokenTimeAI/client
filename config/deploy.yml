@@ -15,9 +15,9 @@ proxy:
   ssl: false
   host: ttime.ai
 
-# Use the remote server's registry directly
+# Use the server's registry through a localhost SSH port forward.
 registry:
-  server: 91.98.82.37:5001
+  server: localhost:5001
   username: kamal
   password:
     - KAMAL_REGISTRY_PASSWORD
@@ -60,6 +60,10 @@ asset_path: /rails/public/assets
 builder:
   arch: amd64
   remote: ssh://root@91.98.82.37
+  cache:
+    type: registry
+    image: ttime-build-cache
+    options: mode=max,image-manifest=true,oci-mediatypes=true
 
 # Use a different ssh user than root
 # ssh:
