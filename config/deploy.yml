@@ -2,35 +2,17 @@
 service: ttime
 
 # Name of the container image (use your-user/app-name on external registries).
-image: YOUR_DOCKER_USERNAME/ttime
+image: ttime
 
 # Deploy to these servers.
 servers:
   web:
     - 91.98.82.37
 
-# Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
-# If used with Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
-#
-# Using an SSL proxy like this requires turning on config.assume_ssl and config.force_ssl in production.rb!
-#
-# Don't use this when deploying to multiple web servers (then you have to terminate SSL at your load balancer).
-#
+# Enable SSL auto certification via Let's Encrypt
 proxy:
   ssl: true
-  host: YOUR_DOMAIN_HERE
-
-# Where you keep your container images.
-registry:
-  # Alternatives: hub.docker.com / registry.digitalocean.com / ghcr.io / ...
-  server: registry.hub.docker.com
-
-  # Needed for authenticated registries.
-  username: YOUR_DOCKER_USERNAME
-
-  # Always use an access token rather than real password when possible.
-  password:
-    - KAMAL_REGISTRY_PASSWORD
+  host: ttime.ai
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
@@ -39,21 +21,11 @@ env:
     - TTIME_DATABASE_PASSWORD
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
-    # When you start using multiple servers, you should split out job processing to a dedicated machine.
     SOLID_QUEUE_IN_PUMA: true
-
-    # Set number of processes dedicated to Solid Queue (default: 1)
-    # JOB_CONCURRENCY: 3
-
-    # Set number of cores available to the application on each server (default: 1).
-    # WEB_CONCURRENCY: 2
 
     # Use ttime-db for a db accessory server on same machine via local kamal docker network.
     DB_HOST: ttime-db
     DB_USERNAME: ttime
-
-    # Log everything from Rails
-    # RAILS_LOG_LEVEL: debug
 
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
 # "bin/kamal logs -r job" will tail logs from the first server in the job section.
@@ -76,16 +48,8 @@ asset_path: /rails/public/assets
 # Configure the image builder.
 builder:
   arch: amd64
-
-  # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
-  # remote: ssh://docker@docker-builder-server
-  #
-  # # Pass arguments and secrets to the Docker build process
-  # args:
-  #   RUBY_VERSION: ruby-3.3.11
-  # secrets:
-  #   - GITHUB_TOKEN
-  #   - RAILS_MASTER_KEY
+  # Build image via SSH directly on the server (no external registry needed)
+  remote: ssh://root@91.98.82.37
 
 # Use a different ssh user than root
 # ssh:
