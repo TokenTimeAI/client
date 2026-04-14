@@ -1,0 +1,57 @@
+<% content_for :title, "#{@project.name} — ttime.ai" %>
+
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-5 h-5 rounded-full flex-shrink-0" style="background-color: <%= @project.color %>"></div>
+      <div>
+        <h1 class="text-2xl font-bold text-white"><%= @project.name %></h1>
+        <% if @project.description.present? %>
+          <p class="text-gray-400 text-sm mt-1"><%= @project.description %></p>
+        <% end %>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <%= link_to "Edit", edit_project_path(@project), class: "text-gray-400 hover:text-white text-sm px-3 py-2 bg-gray-800 rounded-lg transition-colors" %>
+      <%= button_to "Delete", project_path(@project), method: :delete,
+          class: "text-red-400 hover:text-red-300 text-sm px-3 py-2 bg-gray-800 rounded-lg transition-colors",
+          data: { confirm: "Delete #{@project.name}? This cannot be undone." } %>
+    </div>
+  </div>
+
+  <!-- Recent Events -->
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wide mb-4">Recent Events (Last 30 Days)</h2>
+
+    <% if @events.empty? %>
+      <div class="text-center py-8 text-gray-600">
+        <p>No events for this project yet.</p>
+      </div>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-gray-500 border-b border-gray-800">
+              <th class="pb-2 font-medium">Entity</th>
+              <th class="pb-2 font-medium">Language</th>
+              <th class="pb-2 font-medium">Agent</th>
+              <th class="pb-2 font-medium">Tokens</th>
+              <th class="pb-2 font-medium text-right">Time</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800">
+            <% @events.each do |hb| %>
+              <tr class="text-gray-300">
+                <td class="py-2 font-mono text-xs text-gray-400 max-w-xs truncate"><%= hb.entity %></td>
+                <td class="py-2"><%= hb.language || "—" %></td>
+                <td class="py-2 capitalize"><%= hb.agent_type.humanize %></td>
+                <td class="py-2"><%= hb.tokens_used || "—" %></td>
+                <td class="py-2 text-gray-500 text-right text-xs"><%= time_ago_in_words(hb.timestamp) %> ago</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+</div>

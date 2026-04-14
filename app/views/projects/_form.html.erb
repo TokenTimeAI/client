@@ -1,0 +1,39 @@
+<%= form_with model: project, class: "space-y-5" do |f| %>
+  <% if project.errors.any? %>
+    <div class="bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 rounded-lg">
+      <ul class="list-disc list-inside text-sm space-y-1">
+        <% project.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name, "Project Name", class: "block text-sm font-medium text-gray-400 mb-2" %>
+    <%= f.text_field :name,
+        class: "w-full bg-gray-950 border border-gray-700 text-white placeholder-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+        placeholder: "my-project" %>
+  </div>
+
+  <div>
+    <%= f.label :color, "Color", class: "block text-sm font-medium text-gray-400 mb-2" %>
+    <div class="flex items-center gap-3">
+      <%= f.color_field :color, class: "h-10 w-16 bg-gray-950 border border-gray-700 rounded-lg cursor-pointer" %>
+      <span class="text-gray-500 text-sm">Pick a color to identify your project</span>
+    </div>
+  </div>
+
+  <div>
+    <%= f.label :description, "Description (optional)", class: "block text-sm font-medium text-gray-400 mb-2" %>
+    <%= f.text_area :description, rows: 3,
+        class: "w-full bg-gray-950 border border-gray-700 text-white placeholder-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+        placeholder: "A short description of this project" %>
+  </div>
+
+  <div class="flex gap-3">
+    <%= f.submit project.persisted? ? "Save Changes" : "Create Project",
+        class: "bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-5 py-2 rounded-lg transition-colors cursor-pointer" %>
+    <%= link_to "Cancel", projects_path, class: "text-gray-400 hover:text-white text-sm px-5 py-2 rounded-lg transition-colors" %>
+  </div>
+<% end %>

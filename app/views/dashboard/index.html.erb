@@ -1,0 +1,185 @@
+<% content_for :title, "Dashboard — ttime.ai" %>
+
+<div class="space-y-8">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-white">Dashboard</h1>
+      <p class="text-gray-400 text-sm mt-1">Today's agent activity overview</p>
+    </div>
+    <div class="text-sm text-gray-400">
+      <%= Time.zone.now.strftime("%A, %B %-d %Y") %>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 uppercase tracking-wide">Coding Time Today</p>
+          <p class="text-xl font-bold text-white mt-0.5"><%= format_duration(@stats[:coding_time_today]) %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 uppercase tracking-wide">Events Today</p>
+          <p class="text-xl font-bold text-white mt-0.5"><%= @stats[:total_events_today] %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 uppercase tracking-wide">Active Projects</p>
+          <p class="text-xl font-bold text-white mt-0.5"><%= @stats[:active_projects] %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 uppercase tracking-wide">Tokens Used Today</p>
+          <p class="text-xl font-bold text-white mt-0.5"><%= number_with_delimiter(@stats[:total_tokens]) %></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Chart -->
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wide mb-4">7-Day Activity</h2>
+    <div class="flex items-end gap-2 h-24" data-controller="activity-chart" data-activity-chart-data-value="<%= @daily_activity.to_json.html_safe %>">
+      <% @daily_activity.each do |day| %>
+        <%
+          max_seconds = @daily_activity.map { |d| d[:seconds] }.max
+          pct = max_seconds && max_seconds > 0 ? ((day[:seconds].to_f / max_seconds) * 100).round : 0
+          height = [pct, 4].max
+        %>
+        <div class="flex flex-col items-center gap-1 flex-1">
+          <span class="text-xs text-gray-500"><%= format_duration(day[:seconds]) %></span>
+          <div class="w-full bg-indigo-500 rounded-t" style="height: <%= height %>%;" title="<%= day[:label] %>: <%= format_duration(day[:seconds]) %>"></div>
+          <span class="text-xs text-gray-500"><%= day[:label] %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Language Breakdown -->
+    <% if @language_breakdown.any? %>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+      <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wide mb-4">Languages (Last 7 Days)</h2>
+      <div class="space-y-3">
+        <% total = @language_breakdown.sum { |_, c| c } %>
+        <% @language_breakdown.each do |lang, count| %>
+          <div class="flex items-center gap-3">
+            <div class="w-24 text-sm text-gray-300 truncate"><%= lang %></div>
+            <div class="flex-1 bg-gray-800 rounded-full h-2">
+              <div class="bg-indigo-500 h-2 rounded-full" style="width: <%= ((count.to_f / total) * 100).round %>%"></div>
+            </div>
+            <div class="text-xs text-gray-500 w-8 text-right"><%= count %></div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    <% end %>
+
+    <!-- Agent Breakdown -->
+    <% if @agent_breakdown.any? %>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+      <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wide mb-4">Agents (Last 7 Days)</h2>
+      <div class="space-y-3">
+        <% total = @agent_breakdown.sum { |_, c| c } %>
+        <% @agent_breakdown.each do |agent, count| %>
+          <div class="flex items-center gap-3">
+            <div class="w-28 text-sm text-gray-300 truncate capitalize"><%= agent.to_s.humanize %></div>
+            <div class="flex-1 bg-gray-800 rounded-full h-2">
+              <div class="bg-purple-500 h-2 rounded-full" style="width: <%= ((count.to_f / total) * 100).round %>%"></div>
+            </div>
+            <div class="text-xs text-gray-500 w-8 text-right"><%= count %></div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    <% end %>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wide">Recent Activity</h2>
+    </div>
+
+    <% if @recent_heartbeats.empty? %>
+      <div class="text-center py-12 text-gray-600">
+        <p class="text-lg">No activity yet.</p>
+        <p class="text-sm mt-2">Start sending heartbeats from your agent integration to see activity here.</p>
+        <div class="mt-4">
+          <%= link_to "Get API Key", api_keys_path, class: "text-indigo-400 hover:text-indigo-300 text-sm" %>
+        </div>
+      </div>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-gray-500 border-b border-gray-800">
+              <th class="pb-2 font-medium">Entity</th>
+              <th class="pb-2 font-medium">Language</th>
+              <th class="pb-2 font-medium">Agent</th>
+              <th class="pb-2 font-medium">Project</th>
+              <th class="pb-2 font-medium text-right">Time</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800">
+            <% @recent_heartbeats.each do |hb| %>
+              <tr class="text-gray-300">
+                <td class="py-2 font-mono text-xs text-gray-400 max-w-xs truncate"><%= hb.entity %></td>
+                <td class="py-2"><%= hb.language || "—" %></td>
+                <td class="py-2 capitalize"><%= hb.agent_type.humanize %></td>
+                <td class="py-2 text-indigo-400"><%= hb.project&.name || "—" %></td>
+                <td class="py-2 text-gray-500 text-right text-xs"><%= time_ago_in_words(hb.timestamp) %> ago</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Quick Start -->
+  <% if @stats[:total_events_today] == 0 && current_user.api_keys.active.empty? %>
+  <div class="bg-indigo-900/30 border border-indigo-700 rounded-xl p-6">
+    <h2 class="text-lg font-semibold text-white mb-2">Get started with ttime.ai</h2>
+    <p class="text-gray-300 text-sm mb-4">Connect your AI coding agent to start tracking sessions, tokens, languages, and more.</p>
+    <div class="flex gap-3">
+      <%= link_to "Create API Key", api_keys_path, class: "bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 rounded-lg transition-colors" %>
+    </div>
+  </div>
+  <% end %>
+</div>
