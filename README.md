@@ -134,6 +134,62 @@ export WAKATIME_API_KEY="tt_your_api_key"
 export WAKATIME_API_URL="https://ttime.ai/api/v1/"
 ```
 
+## Local daemon client
+
+The repo also includes a Go client under [`client/`](client/) for local forwarding workflows where multiple agent hooks write newline-delimited JSON into a local inbox.
+
+### Install
+
+Install directly with Go:
+
+```bash
+go install github.com/ttime-ai/ttime/client/cmd/ttime@latest
+```
+
+Or with Homebrew from the project tap:
+
+```bash
+brew tap ttime-ai/homebrew-tap
+brew install ttime
+brew upgrade ttime
+```
+
+If you installed via Homebrew, you can run the daemon with `brew services`:
+
+```bash
+brew services start ttime
+brew services stop ttime
+brew services restart ttime
+```
+
+If you installed via `go install`, a release archive, or another non-Homebrew path, `ttime install` and `ttime uninstall` remain available to manage the per-user launchd/systemd service directly.
+
+### Usage
+
+```bash
+ttime setup
+ttime status
+ttime daemon --once
+```
+
+`ttime setup` launches a small terminal UI that:
+
+1. Prompts for the server URL
+2. Starts the device authorization flow
+3. Displays the verification URL and user code
+4. Polls until the server returns an API key
+5. Saves config in the user config directory
+
+For long-running use, install the daemon as a per-user service:
+
+```bash
+ttime install
+ttime uninstall
+```
+
+See [docs/local_daemon.md](docs/local_daemon.md) for the inbox schema, retry queue behavior, and service installation details.
+That guide also includes concrete Claude Code and Cursor hook examples for writing heartbeats into the shared inbox.
+
 ## Tinybird Analytics
 
 See [docs/tinybird_schema.md](docs/tinybird_schema.md) for the ClickHouse schema and Pipe definitions.
