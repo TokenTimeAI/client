@@ -14,7 +14,10 @@ import (
 	"github.com/ttime-ai/ttime/client/internal/config"
 	"github.com/ttime-ai/ttime/client/internal/platform"
 	"github.com/ttime-ai/ttime/client/internal/queue"
+	"github.com/ttime-ai/ttime/client/internal/scanner"
+	_ "github.com/ttime-ai/ttime/client/internal/scanner/detectors" // Register all detectors
 	"github.com/ttime-ai/ttime/client/internal/service"
+	"github.com/ttime-ai/ttime/client/internal/updater"
 )
 
 func Run(ctx context.Context, args []string) int {
@@ -40,6 +43,12 @@ func Run(ctx context.Context, args []string) int {
 		return runInstall(paths)
 	case "uninstall":
 		return runUninstall()
+	case "agents":
+		return runAgents(ctx, paths, args[1:])
+	case "scan":
+		return runScan(ctx, paths, args[1:])
+	case "update":
+		return runUpdate(ctx, paths, args[1:])
 	case "-h", "--help", "help":
 		printUsage()
 		return 0
@@ -117,6 +126,7 @@ func runDaemon(ctx context.Context, paths config.Paths, args []string) int {
 	flags := flag.NewFlagSet("daemon", flag.ContinueOnError)
 	flags.SetOutput(os.Stderr)
 	once := flags.Bool("once", false, "process queued and inbox events once, then exit")
+	noScan := flags.Bool("no-scan", false, "disable agent database scanning")
 	if err := flags.Parse(args); err != nil {
 		return 1
 	}
@@ -135,13 +145,20 @@ func runDaemon(ctx context.Context, paths config.Paths, args []string) int {
 		PollInterval: time.Duration(cfg.PollIntervalSeconds) * time.Second,
 	}
 
+	// Add scanner if not disabled
+	if !*noScan {
+		scannerStatePath := filepath.Join(paths.RootDir, "scanner-state.json")
+		daemon.Scanner = scanner.New(scannerStatePath, 5*time.Minute)
+	}
+
 	if *once {
 		result, err := daemon.RunOnce(ctx)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "daemon run failed: %v\n", err)
 			return 1
 		}
-		fmt.Printf("processed: queued=%d collected=%d sent=%d\n", result.QueuedPreviously, result.Collected, result.Sent)
+		fmt.Printf("processed: queued=%d collected=%d scanned=%d sent=%d\n",
+			result.QueuedPreviously, result.Collected, result.Scanned, result.Sent)
 		return 0
 	}
 
@@ -189,13 +206,161 @@ func runUninstall() int {
 	return 0
 }
 
+func runAgents(ctx context.Context, paths config.Paths, args []string) int {
+	fmt.Println("Available agent detectors:")
+	for _, name := range scanner.ListDetectors() {
+		fmt.Printf("  - %s\n", name)
+	}
+
+	fmt.Println("\nDetected agents on this system:")
+	detected, err := scanner.FindDetectors(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error detecting agents: %v\n", err)
+		return 1
+	}
+
+	if len(detected) == 0 {
+		fmt.Println("  (none detected)")
+		return 0
+	}
+
+	for _, d := range detected {
+		fmt.Printf("  + %s\n", d.Name())
+		for _, path := range d.DefaultPaths() {
+			if scanner.DirExists(path) {
+				fmt.Printf("      path: %s\n", path)
+				break
+			}
+		}
+	}
+
+	return 0
+}
+
+func runScan(ctx context.Context, paths config.Paths, args []string) int {
+	flags := flag.NewFlagSet("scan", flag.ContinueOnError)
+	flags.SetOutput(os.Stderr)
+	agentFilter := flags.String("agent", "", "scan only specific agent (e.g., 'cosine', 'cline')")
+	if err := flags.Parse(args); err != nil {
+		return 1
+	}
+
+	scannerStatePath := filepath.Join(paths.RootDir, "scanner-state.json")
+	s := scanner.New(scannerStatePath, 5*time.Minute)
+
+	if *agentFilter != "" {
+		fmt.Printf("Scanning agent: %s\n", *agentFilter)
+	}
+
+	results, err := s.ScanOnce(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "scan failed: %v\n", err)
+		return 1
+	}
+
+	if *agentFilter != "" {
+		// Filter results by agent
+		var filtered []scanner.ScanResult
+		for _, r := range results {
+			if r.AgentType == *agentFilter {
+				filtered = append(filtered, r)
+			}
+		}
+		results = filtered
+	}
+
+	fmt.Printf("Found %d conversation events:\n\n", len(results))
+
+	for _, r := range results {
+		fmt.Printf("Agent:     %s\n", r.AgentType)
+		fmt.Printf("Project:   %s\n", r.Project)
+		fmt.Printf("Time:      %s\n", r.Timestamp.Format(time.RFC3339))
+		fmt.Printf("Tokens:    %d prompt + %d completion = %d total\n",
+			r.PromptTokens, r.CompletionTokens, r.TotalTokens)
+		if r.Model != "" {
+			fmt.Printf("Model:     %s\n", r.Model)
+		}
+		if r.CostUSD > 0 {
+			fmt.Printf("Cost:      $%.6f\n", r.CostUSD)
+		}
+		fmt.Printf("Conv ID:   %s\n", r.ConversationID)
+		fmt.Println()
+	}
+
+	return 0
+}
+
+func runUpdate(ctx context.Context, paths config.Paths, args []string) int {
+	flags := flag.NewFlagSet("update", flag.ContinueOnError)
+	flags.SetOutput(os.Stderr)
+	checkOnly := flags.Bool("check", false, "only check for updates, don't install")
+	autoYes := flags.Bool("yes", false, "automatically confirm update installation")
+	if err := flags.Parse(args); err != nil {
+		return 1
+	}
+
+	cfg, err := config.LoadOrDefault(paths.ConfigFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
+		return 1
+	}
+
+	// Get current version from ldflags or default to "dev"
+	version := os.Getenv("TTIME_VERSION")
+	if version == "" {
+		version = "dev"
+	}
+
+	u := updater.New(version, cfg.ServerURL)
+	result, err := u.CheckForUpdate()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to check for updates: %v\n", err)
+		return 1
+	}
+
+	if !result.UpdateAvailable {
+		fmt.Printf("✓ ttime is up to date (version %s)\n", result.CurrentVersion)
+		return 0
+	}
+
+	fmt.Printf("Update available: %s → %s\n", result.CurrentVersion, result.LatestVersion)
+	fmt.Printf("Download: %s\n", result.ReleaseURL)
+
+	if *checkOnly {
+		return 0
+	}
+
+	// Prompt for confirmation unless --yes
+	if !*autoYes {
+		fmt.Print("Install update? [y/N] ")
+		var response string
+		fmt.Scanln(&response)
+		if response != "y" && response != "Y" {
+			fmt.Println("Update cancelled.")
+			return 0
+		}
+	}
+
+	fmt.Printf("Downloading ttime %s...\n", result.LatestVersion)
+	if err := u.PerformUpdate(result.Asset); err != nil {
+		fmt.Fprintf(os.Stderr, "update failed: %v\n", err)
+		return 1
+	}
+
+	fmt.Printf("✓ Successfully updated to ttime %s\n", result.LatestVersion)
+	return 0
+}
+
 func printUsage() {
 	fmt.Fprintf(os.Stderr, `ttime - local heartbeat daemon client
 
 Usage:
   ttime setup
   ttime status
-  ttime daemon [--once]
+  ttime daemon [--once] [--no-scan]
+  ttime agents          # list detected AI agents
+  ttime scan [--agent <name>]  # scan agent databases
+  ttime update [--check] [--yes]  # check for or install updates
   ttime install
   ttime uninstall
 `)

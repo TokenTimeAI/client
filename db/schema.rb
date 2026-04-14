@@ -72,12 +72,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_020001) do
     t.datetime "remember_created_at"
     t.datetime "reset_password_sent_at"
     t.string "reset_password_token"
-    t.boolean "subscription_cancel_at_period_end", default: false, null: false
-    t.datetime "subscription_current_period_end"
     t.string "stripe_customer_id"
     t.string "stripe_price_id"
     t.string "stripe_subscription_id"
     t.string "stripe_subscription_status"
+    t.boolean "subscription_cancel_at_period_end", default: false, null: false
+    t.datetime "subscription_current_period_end"
     t.string "timezone", default: "UTC"
     t.string "tinybird_token"
     t.string "uid"

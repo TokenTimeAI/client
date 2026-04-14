@@ -7,6 +7,7 @@ import (
 	"github.com/ttime-ai/ttime/client/internal/api"
 	"github.com/ttime-ai/ttime/client/internal/collector"
 	"github.com/ttime-ai/ttime/client/internal/normalize"
+	"github.com/ttime-ai/ttime/client/internal/scanner"
 )
 
 type Collector interface {
@@ -23,17 +24,23 @@ type Sender interface {
 	SendHeartbeats(context.Context, []api.Heartbeat) error
 }
 
+type AgentScanner interface {
+	ScanOnce(context.Context) ([]scanner.ScanResult, error)
+}
+
 type Daemon struct {
 	Collector    Collector
 	Queue        Queue
 	Sender       Sender
 	MachineName  string
 	PollInterval time.Duration
+	Scanner      AgentScanner
 }
 
 type Result struct {
 	QueuedPreviously int
 	Collected        int
+	Scanned          int
 	Sent             int
 }
 
@@ -43,22 +50,41 @@ func (d *Daemon) RunOnce(ctx context.Context) (Result, error) {
 		return Result{}, err
 	}
 
+	// Collect from JSONL inbox
 	collectedRaw, err := d.Collector.Collect(ctx)
 	if err != nil {
 		return Result{}, err
 	}
 
-	collected := make([]api.Heartbeat, 0, len(collectedRaw))
+	// Normalize collected events
+	events := make([]api.Heartbeat, 0, len(collectedRaw))
 	for _, raw := range collectedRaw {
-		collected = append(collected, normalize.Event(raw, normalize.Options{
+		events = append(events, normalize.Event(raw, normalize.Options{
 			MachineName: d.MachineName,
 		}))
 	}
 
-	batch := append(append([]api.Heartbeat{}, queued...), collected...)
+	// Scan agent databases if scanner is configured
+	var scannedEvents []api.Heartbeat
+	if d.Scanner != nil {
+		scanResults, err := d.Scanner.ScanOnce(ctx)
+		if err == nil {
+			// Convert scan results to heartbeats
+			for _, result := range scanResults {
+				event := result.ToEvent()
+				scannedEvents = append(scannedEvents, normalize.Event(event, normalize.Options{
+					MachineName: d.MachineName,
+				}))
+			}
+		}
+	}
+
+	// Combine all sources
+	batch := append(append(append([]api.Heartbeat{}, queued...), events...), scannedEvents...)
 	result := Result{
 		QueuedPreviously: len(queued),
-		Collected:        len(collected),
+		Collected:        len(events),
+		Scanned:          len(scannedEvents),
 		Sent:             0,
 	}
 
@@ -67,8 +93,10 @@ func (d *Daemon) RunOnce(ctx context.Context) (Result, error) {
 	}
 
 	if err := d.Sender.SendHeartbeats(ctx, batch); err != nil {
-		if len(collected) > 0 {
-			if appendErr := d.Queue.Append(collected); appendErr != nil {
+		// Queue only the new events (not previously queued) for retry
+		newEvents := append(events, scannedEvents...)
+		if len(newEvents) > 0 {
+			if appendErr := d.Queue.Append(newEvents); appendErr != nil {
 				return result, appendErr
 			}
 		}

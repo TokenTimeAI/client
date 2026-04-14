@@ -1,0 +1,370 @@
+<% content_for :title, "TokenTime.ai — WakaTime for AI Agents" %>
+
+<!-- Hero Section -->
+<section class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+  <!-- Subtle grain/noise overlay -->
+  <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 400 400%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E');"></div>
+  
+  <!-- Glowing orb background -->
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] opacity-20">
+    <div class="absolute inset-0 bg-indigo-600 rounded-full blur-[150px]"></div>
+    <div class="absolute inset-20 bg-purple-600 rounded-full blur-[120px] opacity-50"></div>
+  </div>
+  
+  <div class="relative max-w-5xl mx-auto px-6 pt-32 pb-20 text-center">
+    <!-- Badge -->
+    <a href="#" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.08] backdrop-blur-sm text-sm mb-10 hover:bg-white/[0.05] transition-all group">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="text-gray-300">Now tracking 100+ developers</span>
+      <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+      </svg>
+    </a>
+    
+    <!-- Main Headline -->
+    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight mb-8 leading-[1.1]">
+      <span class="bg-gradient-to-b from-white via-white to-white/60 bg-clip-text text-transparent">
+        WakaTime for
+      </span>
+      <br />
+      <span class="bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+        AI Agents
+      </span>
+    </h1>
+    
+    <!-- Subheadline -->
+    <p class="text-lg sm:text-xl text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+      Track time, tokens, and costs across Cursor, Claude Code, Copilot, and more. Know exactly what your agents are costing you.
+    </p>
+    
+    <!-- CTA Buttons -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+      <%= link_to new_user_registration_path, class: "inline-flex items-center justify-center gap-2 bg-white text-gray-950 px-8 py-4 rounded-xl font-semibold transition-all hover:bg-gray-100 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]" do %>
+        Start Tracking Free
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      <% end %>
+      <%= link_to "https://github.com", class: "inline-flex items-center justify-center gap-2 text-gray-300 hover:text-white px-6 py-4 font-medium transition-colors" do %>
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+        View on GitHub
+      <% end %>
+    </div>
+  </div>
+  
+  <!-- Floating UI Mockup -->
+  <div class="relative w-full max-w-4xl mx-auto px-6 pb-32">
+    <div class="relative mx-auto">
+      <!-- Glow behind mockup -->
+      <div class="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-3xl scale-95"></div>
+      
+      <!-- Window Frame -->
+      <div class="relative bg-[#0a0a0f] rounded-2xl border border-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.02),0_25px_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden">
+        <!-- Window Controls -->
+        <div class="flex items-center gap-2 px-4 py-3 border-b border-white/[0.05] bg-white/[0.02]">
+          <div class="flex gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-[#ff5f57]"></div>
+            <div class="w-3 h-3 rounded-full bg-[#febc2e]"></div>
+            <div class="w-3 h-3 rounded-full bg-[#28c840]"></div>
+          </div>
+          <div class="flex-1 text-center">
+            <span class="text-xs text-gray-500">ttime dashboard</span>
+          </div>
+          <div class="w-16"></div>
+        </div>
+        
+        <!-- Dashboard Content -->
+        <div class="p-6">
+          <!-- Header Row -->
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="text-sm font-medium text-gray-400">Today's Activity</h3>
+              <p class="text-2xl font-semibold text-white mt-1">3h 47m</p>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+              <span>Last sync: just now</span>
+            </div>
+          </div>
+          
+          <!-- Agent Rows -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] transition-colors">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <span class="text-sm font-bold text-blue-400">Cu</span>
+                </div>
+                <div>
+                  <div class="font-medium">Cursor</div>
+                  <div class="text-xs text-gray-500">Active now</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-6">
+                <div class="text-right">
+                  <div class="font-medium">2h 34m</div>
+                  <div class="text-xs text-gray-500">Time</div>
+                </div>
+                <div class="text-right w-16">
+                  <div class="font-medium text-emerald-400">$4.20</div>
+                  <div class="text-xs text-gray-500">Cost</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] transition-colors">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                  <span class="text-sm font-bold text-orange-400">Cl</span>
+                </div>
+                <div>
+                  <div class="font-medium">Claude Code</div>
+                  <div class="text-xs text-gray-500">5 min ago</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-6">
+                <div class="text-right">
+                  <div class="font-medium">1h 12m</div>
+                  <div class="text-xs text-gray-500">Time</div>
+                </div>
+                <div class="text-right w-16">
+                  <div class="font-medium text-emerald-400">$2.85</div>
+                  <div class="text-xs text-gray-500">Cost</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] transition-colors">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                  <span class="text-sm font-bold text-purple-400">Co</span>
+                </div>
+                <div>
+                  <div class="font-medium">Copilot</div>
+                  <div class="text-xs text-gray-500">2 hours ago</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-6">
+                <div class="text-right">
+                  <div class="font-medium">45m</div>
+                  <div class="text-xs text-gray-500">Time</div>
+                </div>
+                <div class="text-right w-16">
+                  <div class="font-medium text-gray-500">$0.00</div>
+                  <div class="text-xs text-gray-500">Cost</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Shine effect overlay -->
+      <div class="absolute inset-0 rounded-2xl pointer-events-none" style="background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 55%, transparent 60%);"></div>
+    </div>
+  </div>
+  
+  <!-- Gradient border divider -->
+  <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-px" style="background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);"></div>
+</section>
+
+<!-- Supported Agents Section -->
+<section class="py-32 relative">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-20">
+      <h2 class="text-3xl sm:text-4xl font-semibold mb-4">Works with your agents</h2>
+      <p class="text-gray-400 text-lg">One CLI. Every agent. Zero configuration.</p>
+    </div>
+    
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Cursor -->
+      <div class="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-blue-500/30 hover:bg-blue-500/[0.02] transition-all duration-300">
+        <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <span class="text-lg font-bold text-blue-400">Cu</span>
+        </div>
+        <h3 class="font-semibold text-lg mb-1">Cursor</h3>
+        <p class="text-sm text-gray-500">Tabs, composer, inline edits</p>
+      </div>
+      
+      <!-- Claude Code -->
+      <div class="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-orange-500/30 hover:bg-orange-500/[0.02] transition-all duration-300">
+        <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <span class="text-lg font-bold text-orange-400">Cl</span>
+        </div>
+        <h3 class="font-semibold text-lg mb-1">Claude Code</h3>
+        <p class="text-sm text-gray-500">Terminal sessions, code mods</p>
+      </div>
+      
+      <!-- GitHub Copilot -->
+      <div class="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-purple-500/30 hover:bg-purple-500/[0.02] transition-all duration-300">
+        <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <span class="text-lg font-bold text-purple-400">Co</span>
+        </div>
+        <h3 class="font-semibold text-lg mb-1">Copilot</h3>
+        <p class="text-sm text-gray-500">Suggestion acceptance rates</p>
+      </div>
+      
+      <!-- Cline -->
+      <div class="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-green-500/30 hover:bg-green-500/[0.02] transition-all duration-300">
+        <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <span class="text-lg font-bold text-green-400">Cn</span>
+        </div>
+        <h3 class="font-semibold text-lg mb-1">Cline</h3>
+        <p class="text-sm text-gray-500">VS Code agent sessions</p>
+      </div>
+      
+      <!-- OpenCode -->
+      <div class="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-pink-500/30 hover:bg-pink-500/[0.02] transition-all duration-300">
+        <div class="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <span class="text-lg font-bold text-pink-400">Op</span>
+        </div>
+        <h3 class="font-semibold text-lg mb-1">OpenCode</h3>
+        <p class="text-sm text-gray-500">Local-first agent tracking</p>
+      </div>
+      
+      <!-- More -->
+      <div class="group relative p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-gray-500/30 hover:bg-gray-500/[0.02] transition-all duration-300">
+        <div class="w-12 h-12 rounded-xl bg-gray-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+        </div>
+        <h3 class="font-semibold text-lg mb-1">And more</h3>
+        <p class="text-sm text-gray-500">Extensible architecture</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-32 border-t border-white/[0.06]">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="lg:grid lg:grid-cols-2 lg:gap-20">
+      <div>
+        <h2 class="text-3xl sm:text-4xl font-semibold mb-6">Know your true costs</h2>
+        <p class="text-gray-400 text-lg mb-12">
+          See exactly what each agent is costing you. Real-time tracking with detailed breakdowns.
+        </p>
+        
+        <div class="space-y-8">
+          <div class="flex gap-5">
+            <div class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-lg mb-1">Time tracking</h3>
+              <p class="text-gray-500">Precise session tracking with idle detection. Know when agents are actually working.</p>
+            </div>
+          </div>
+          
+          <div class="flex gap-5">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-lg mb-1">Token monitoring</h3>
+              <p class="text-gray-500">Track prompt and completion tokens across all platforms. Find inefficiencies.</p>
+            </div>
+          </div>
+          
+          <div class="flex gap-5">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+              <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-lg mb-1">Cost estimation</h3>
+              <p class="text-gray-500">Real-time cost calculations using current API pricing. No surprises.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-16 lg:mt-0 flex items-center">
+        <!-- Terminal/Code Block -->
+        <div class="w-full rounded-2xl bg-[#0d0d12] border border-white/[0.08] overflow-hidden">
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-white/[0.05]">
+            <div class="flex gap-1.5">
+              <div class="w-3 h-3 rounded-full bg-[#ff5f57]"></div>
+              <div class="w-3 h-3 rounded-full bg-[#febc2e]"></div>
+              <div class="w-3 h-3 rounded-full bg-[#28c840]"></div>
+            </div>
+            <span class="ml-4 text-xs text-gray-500">bash</span>
+          </div>
+          <div class="p-4 font-mono text-sm overflow-x-auto">
+            <div class="text-gray-500">$ <span class="text-gray-300">curl -fsSL ttime.ai/install.sh | sh</span></div>
+            <div class="mt-2 text-emerald-400">✓ Installed ttime v1.0.0</div>
+            <div class="mt-4 text-gray-500">$ <span class="text-gray-300">ttime login</span></div>
+            <div class="mt-2 text-blue-400">→ Opened browser for authentication</div>
+            <div class="mt-4 text-gray-500">$ <span class="text-gray-300">ttime start</span></div>
+            <div class="mt-2 text-emerald-400">✓ Tracking active agents...</div>
+            <div class="mt-2 text-gray-500">  <span class="text-gray-400">Monitoring: Cursor, Claude Code</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- API Compatible Section -->
+<section class="py-32 border-t border-white/[0.06]">
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <h2 class="text-3xl sm:text-4xl font-semibold mb-6">WakaTime compatible</h2>
+    <p class="text-gray-400 text-lg mb-12 max-w-2xl mx-auto">
+      TokenTime implements the WakaTime API. Works with any tool that supports WakaTime. Just change the API URL.
+    </p>
+    
+    <div class="inline-flex items-center gap-8 px-8 py-4 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+          <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        </div>
+        <span class="text-sm text-gray-400">API Compatible</span>
+      </div>
+      <div class="w-px h-8 bg-white/[0.08]"></div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+          <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+        </div>
+        <span class="text-sm text-gray-400">Self-hostable</span>
+      </div>
+      <div class="w-px h-8 bg-white/[0.08]"></div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+          <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <span class="text-sm text-gray-400">Open source</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-32 border-t border-white/[0.06] relative overflow-hidden">
+  <!-- Background glow -->
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] opacity-30">
+    <div class="absolute inset-0 bg-indigo-600 rounded-full blur-[150px]"></div>
+  </div>
+  
+  <div class="relative max-w-4xl mx-auto px-6 text-center">
+    <h2 class="text-4xl sm:text-5xl font-semibold mb-6">Start tracking today</h2>
+    <p class="text-gray-400 text-lg mb-12">Free for personal use. No credit card required.</p>
+    
+    <%= link_to new_user_registration_path, class: "inline-flex items-center justify-center gap-2 bg-white text-gray-950 px-10 py-5 rounded-xl font-semibold text-lg transition-all hover:bg-gray-100 shadow-[0_0_60px_-15px_rgba(255,255,255,0.4)]" do %>
+      Create free account
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    <% end %>
+    
+    <p class="text-gray-600 text-sm mt-8">Self-hosted option available for teams</p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-white/[0.06] py-12">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-2">
+        <%= image_tag "logo-main.svg", alt: "TokenTime", class: "h-6 w-auto opacity-60" %>
+      </div>
+      <div class="flex items-center gap-8 text-sm text-gray-500">
+        <%= link_to "Dashboard", dashboard_path, class: "hover:text-gray-300 transition-colors" %>
+        <%= link_to "Documentation", "#", class: "hover:text-gray-300 transition-colors" %>
+        <%= link_to "GitHub", "https://github.com", class: "hover:text-gray-300 transition-colors" %>
+      </div>
+      <p class="text-sm text-gray-600">© 2025 TokenTime.ai</p>
+    </div>
+  </div>
+</footer>

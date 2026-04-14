@@ -4,8 +4,15 @@ Rails.application.routes.draw do
   # Health check
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # Install scripts
+  get "install.sh", to: "install_scripts#install"
+  get "install.ps1", to: "install_scripts#windows"
+
+  # Marketing / Home
+  root "home#index"
+
   # Dashboard
-  root "dashboard#index"
+  get "dashboard", to: "dashboard#index"
 
   # Web UI
   resources :projects
@@ -23,6 +30,9 @@ Rails.application.routes.draw do
     namespace :v1 do
       post "device_authorizations", to: "device_authorizations#create"
       post "device_authorizations/poll", to: "device_authorizations#poll"
+
+      # Release checking
+      get "releases/latest", to: "releases#latest"
 
       # Heartbeat ingestion (WakaTime-compatible)
       post "heartbeats", to: "heartbeats#create"

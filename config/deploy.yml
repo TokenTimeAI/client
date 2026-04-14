@@ -1,7 +1,8 @@
 # Name of your application. Used to uniquely configure containers.
 service: ttime
 
-# Name of the container image (use your-user/app-name on external registries).
+# Use local image built on the server - no registry needed
+# Image is built directly on the remote host
 image: ttime
 
 # Deploy to these servers.
@@ -11,14 +12,22 @@ servers:
 
 # Enable SSL auto certification via Let's Encrypt
 proxy:
-  ssl: true
+  ssl: false
   host: ttime.ai
+
+# Use the server's registry through a localhost SSH port forward.
+registry:
+  server: localhost:5001
+  username: kamal
+  password:
+    - KAMAL_REGISTRY_PASSWORD
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
   secret:
     - RAILS_MASTER_KEY
     - TTIME_DATABASE_PASSWORD
+    - TINYBIRD_TOKEN
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     SOLID_QUEUE_IN_PUMA: true
@@ -26,6 +35,8 @@ env:
     # Use ttime-db for a db accessory server on same machine via local kamal docker network.
     DB_HOST: ttime-db
     DB_USERNAME: ttime
+    TINYBIRD_API_URL: https://api.tinybird.co
+    TINYBIRD_URL: https://api.tinybird.co
 
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
 # "bin/kamal logs -r job" will tail logs from the first server in the job section.
@@ -45,11 +56,14 @@ volumes:
 # version inside the asset_path.
 asset_path: /rails/public/assets
 
-# Configure the image builder.
+# Build on the remote server - image stays on server for deploy
 builder:
   arch: amd64
-  # Build image via SSH directly on the server (no external registry needed)
   remote: ssh://root@91.98.82.37
+  cache:
+    type: registry
+    image: ttime-build-cache
+    options: mode=max,image-manifest=true,oci-mediatypes=true
 
 # Use a different ssh user than root
 # ssh:
@@ -66,6 +80,6 @@ accessories:
         POSTGRES_USER: ttime
         POSTGRES_DB: ttime_production
       secret:
-        - TTIME_DATABASE_PASSWORD
+        - POSTGRES_PASSWORD
     directories:
       - data:/var/lib/postgresql/data

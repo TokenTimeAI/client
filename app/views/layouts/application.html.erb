@@ -11,9 +11,8 @@
 
     <%= yield :head %>
 
-    <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="apple-touch-icon" href="/icon.svg">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
@@ -23,16 +22,13 @@
 
   <body class="bg-gray-950 text-gray-100 min-h-screen" data-controller="app">
     <% if user_signed_in? %>
-      <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
+      <nav class="bg-gray-900 border-b border-white/[0.06] px-6 py-3 flex items-center justify-between">
         <div class="flex items-center gap-6">
-          <%= link_to root_path, class: "text-indigo-400 font-bold text-xl flex items-center gap-2" do %>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 14.414l-4.707-4.707 1.414-1.414L11 13.586l6.293-6.293 1.414 1.414L11 16.414z"/>
-            </svg>
-            ttime.ai
+          <%= link_to root_path, class: "flex items-center gap-2" do %>
+            <%= image_tag "logo-main.svg", alt: "TokenTime.ai", class: "h-8 w-auto" %>
           <% end %>
           <div class="flex items-center gap-4 text-sm">
-            <%= link_to "Dashboard", root_path, class: "text-gray-300 hover:text-white transition-colors #{current_page?(root_path) ? 'text-white font-medium' : ''}" %>
+            <%= link_to "Dashboard", dashboard_path, class: "text-gray-300 hover:text-white transition-colors #{current_page?(dashboard_path) ? 'text-white font-medium' : ''}" %>
             <%= link_to "Projects", projects_path, class: "text-gray-300 hover:text-white transition-colors" %>
             <%= link_to "API Keys", api_keys_path, class: "text-gray-300 hover:text-white transition-colors" %>
             <%= link_to "Billing", billing_path, class: "text-gray-300 hover:text-white transition-colors #{current_page?(billing_path) ? 'text-white font-medium' : ''}" %>
@@ -41,22 +37,32 @@
         <div class="flex items-center gap-4 text-sm">
           <span class="text-gray-400"><%= current_user.display_name %></span>
           <% if current_user.subscription_active? %>
-            <span class="rounded-full border border-green-700/60 bg-green-900/20 px-2.5 py-1 text-xs font-medium text-green-200">Personal plan active</span>
+            <span class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">Personal plan active</span>
           <% end %>
           <%= link_to "Sign out", destroy_user_session_path, data: { turbo_method: :delete },
               class: "text-gray-400 hover:text-white transition-colors" %>
+        </div>
+      </nav>
+    <% else %>
+      <nav class="absolute top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between">
+        <%= link_to root_path, class: "flex items-center gap-2" do %>
+          <%= image_tag "logo-main.svg", alt: "TokenTime.ai", class: "h-8 w-auto" %>
+        <% end %>
+        <div class="flex items-center gap-4">
+          <%= link_to "Sign in", new_user_session_path, class: "text-gray-300 hover:text-white transition-colors text-sm" %>
+          <%= link_to "Get Started", new_user_registration_path, class: "bg-white text-gray-950 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-colors" %>
         </div>
       </nav>
     <% end %>
 
     <main class="<%= user_signed_in? ? 'container mx-auto px-6 py-8 max-w-7xl' : '' %>">
       <% if notice %>
-        <div class="mb-6 bg-green-900/40 border border-green-700 text-green-300 px-4 py-3 rounded-lg" role="alert">
+        <div class="mb-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-lg" role="alert">
           <%= notice %>
         </div>
       <% end %>
       <% if alert %>
-        <div class="mb-6 bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 rounded-lg" role="alert">
+        <div class="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg" role="alert">
           <%= alert %>
         </div>
       <% end %>
