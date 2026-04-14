@@ -1,0 +1,118 @@
+<% content_for :title, "API Keys — ttime.ai" %>
+
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-white">API Keys</h1>
+      <p class="text-gray-400 text-sm mt-1">Manage access tokens for your agent integrations</p>
+    </div>
+  </div>
+
+  <!-- Show newly created key once -->
+  <% if flash[:created_key] %>
+    <div class="bg-green-900/30 border border-green-700 rounded-xl p-5">
+      <p class="text-green-300 font-medium mb-2">Your new API key (shown once — copy it now):</p>
+      <div class="flex items-center gap-3">
+        <code class="flex-1 bg-gray-950 text-green-300 px-4 py-2 rounded-lg font-mono text-sm break-all border border-green-800">
+          <%= flash[:created_key] %>
+        </code>
+        <button class="text-gray-400 hover:text-white text-sm px-3 py-2 bg-gray-800 rounded-lg transition-colors"
+                data-controller="clipboard"
+                data-clipboard-text-value="<%= flash[:created_key] %>"
+                data-action="click->clipboard#copy">
+          Copy
+        </button>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Create new key -->
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wide mb-4">Create New Key</h2>
+    <%= form_with model: ApiKey.new, url: api_keys_path, class: "flex gap-3" do |f| %>
+      <%= f.text_field :name, placeholder: "Key name (e.g. Claude Code - MacBook)",
+          class: "flex-1 bg-gray-950 border border-gray-700 text-white placeholder-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" %>
+      <%= f.submit "Create Key",
+          class: "bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-5 py-2 rounded-lg transition-colors cursor-pointer" %>
+    <% end %>
+  </div>
+
+  <!-- Existing keys -->
+  <div class="bg-gray-900 rounded-xl border border-gray-800">
+    <div class="px-6 py-4 border-b border-gray-800">
+      <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wide">Active Keys</h2>
+    </div>
+
+    <% if @api_keys.empty? %>
+      <div class="text-center py-12 text-gray-600">
+        <p>No API keys yet. Create one above.</p>
+      </div>
+    <% else %>
+      <ul class="divide-y divide-gray-800">
+        <% @api_keys.each do |key| %>
+          <li class="px-6 py-4 flex items-center justify-between">
+            <div>
+              <p class="text-white font-medium"><%= key.name %></p>
+              <p class="text-gray-500 text-xs mt-1 font-mono">
+                <%= key.key[0..9] %>••••••••••••••••••••••••••••••••••••••••
+              </p>
+              <p class="text-gray-600 text-xs mt-1">
+                Created <%= time_ago_in_words(key.created_at) %> ago
+                <% if key.last_used_at %>
+                  · Last used <%= time_ago_in_words(key.last_used_at) %> ago
+                <% else %>
+                  · Never used
+                <% end %>
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <% if key.active? %>
+                <span class="text-xs text-green-400 bg-green-900/30 px-2 py-1 rounded-full">Active</span>
+                <%= button_to "Revoke", api_key_path(key), method: :delete,
+                    class: "text-xs text-red-400 hover:text-red-300 transition-colors",
+                    data: { confirm: "Are you sure you want to revoke this key?" } %>
+              <% else %>
+                <span class="text-xs text-gray-600 bg-gray-800 px-2 py-1 rounded-full">Revoked</span>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+
+  <!-- Integration Guide -->
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wide mb-4">Integration Examples</h2>
+    <div class="space-y-4 text-sm">
+      <div>
+        <p class="text-gray-300 font-medium mb-2">WakaTime-compatible (single heartbeat)</p>
+        <pre class="bg-gray-950 text-green-300 rounded-lg p-4 text-xs font-mono overflow-x-auto">curl -X POST <%= root_url %>api/v1/heartbeats \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "entity": "main.py",
+    "type": "file",
+    "language": "Python",
+    "project": "my-project",
+    "agent_type": "claude_code",
+    "time": <%= Time.now.to_f %>,
+    "is_write": true,
+    "tokens_used": 1500,
+    "lines_added": 42
+  }'</pre>
+      </div>
+
+      <div>
+        <p class="text-gray-300 font-medium mb-2">Bulk heartbeats</p>
+        <pre class="bg-gray-950 text-green-300 rounded-lg p-4 text-xs font-mono overflow-x-auto">curl -X POST <%= root_url %>api/v1/heartbeats/bulk \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {"entity":"main.py","type":"file","agent_type":"codex","time":<%= Time.now.to_f %>},
+    {"entity":"utils.py","type":"file","agent_type":"codex","time":<%= (Time.now + 30).to_f %>}
+  ]'</pre>
+      </div>
+    </div>
+  </div>
+</div>
