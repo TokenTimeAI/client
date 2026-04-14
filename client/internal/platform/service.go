@@ -17,10 +17,10 @@ const (
 )
 
 var (
-	currentGOOS     = runtime.GOOS
-	userHomeDir     = os.UserHomeDir
-	userConfigDir   = os.UserConfigDir
-	commandRunner   = runCommand
+	currentGOOS   = runtime.GOOS
+	userHomeDir   = os.UserHomeDir
+	userConfigDir = os.UserConfigDir
+	commandRunner = runCommand
 )
 
 type ServiceStatus struct {

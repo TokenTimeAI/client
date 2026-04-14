@@ -10,10 +10,15 @@ Rails.application.routes.draw do
   # Web UI
   resources :projects
   resources :api_keys, only: %i[index create destroy]
+  get "device/:user_code", to: "device_authorizations#show", as: :device_authorization
+  post "device/:user_code/approve", to: "device_authorizations#approve", as: :approve_device_authorization
 
   # API v1 — WakaTime-compatible endpoints for agent integrations
   namespace :api do
     namespace :v1 do
+      post "device_authorizations", to: "device_authorizations#create"
+      post "device_authorizations/poll", to: "device_authorizations#poll"
+
       # Heartbeat ingestion (WakaTime-compatible)
       post "heartbeats", to: "heartbeats#create"
       post "users/current/heartbeats", to: "heartbeats#create"

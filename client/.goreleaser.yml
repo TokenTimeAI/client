@@ -1,0 +1,41 @@
+version: 2
+
+project_name: ttime
+
+builds:
+  - id: ttime
+    main: ./cmd/ttime
+    binary: ttime
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats: [tar.gz]
+
+checksum:
+  name_template: checksums.txt
+
+brews:
+  - ids:
+      - ttime
+    name: ttime
+    directory: Formula
+    homepage: https://github.com/ttime-ai/ttime
+    description: Local heartbeat daemon client for ttime.ai
+    repository:
+      owner: ttime-ai
+      name: homebrew-tap
+      branch: main
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    install: |
+      bin.install "ttime"
+    service: |
+      run [opt_bin/"ttime", "daemon"]
+      keep_alive true
+      working_dir var
+    test: |
+      system "#{bin}/ttime", "help"
