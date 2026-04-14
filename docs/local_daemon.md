@@ -92,9 +92,14 @@ The daemon’s integration boundary is the inbox directory. The recommended patt
 Separate files per agent make it easy to debug and avoid write contention:
 
 - `inbox/claude_code.jsonl`
+- `inbox/cosine.jsonl` or `inbox/cos.jsonl`
+- `inbox/cline.jsonl`
 - `inbox/cursor.jsonl`
 - `inbox/codex.jsonl`
-- `inbox/copilot.jsonl`
+- `inbox/copilot.jsonl` (for GitHub Copilot CLI)
+- `inbox/opencode.jsonl`
+- `inbox/continue.jsonl`
+- `inbox/aider.jsonl`
 
 ### Claude Code hook example
 
@@ -130,12 +135,86 @@ Cursor’s hooks can use the same append-to-JSONL pattern:
 }
 ```
 
+### Cosine/COS hook example
+
+Cosine CLI supports hooks via `.cosine.toml` or `cosine.toml` configuration. Configure post-action hooks to emit events:
+
+```toml
+[[hooks.PostAction]]
+matcher = ".*"
+command = "mkdir -p \"$HOME/.config/ttime/inbox\" && printf '%s\\n' \"{\\\"entity\\\":\\\"$PWD\\\",\\\"type\\\":\\\"app\\\",\\\"agent_type\\\":\\\"cosine\\\",\\\"time\\\":$(date +%s),\\\"metadata\\\":{\\\"source\\\":\\\"cosine-hook\\\"}}\" >> \"$HOME/.config/ttime/inbox/cosine.jsonl\""
+```
+
+Or via MCP, configure a server to write events:
+
+```toml
+[mcp.ttime]
+command = "sh"
+args = ["-c", "mkdir -p ~/.config/ttime/inbox && cat >> ~/.config/ttime/inbox/cosine.jsonl"]
+```
+
+### Cline hook example
+
+Cline (VS Code extension) supports custom settings for hooks. Add to your VS Code settings:
+
+```json
+{
+  "cline.postToolUseHooks": [
+    "mkdir -p \"$HOME/.config/ttime/inbox\" && printf '%s\\n' '{\"entity\":\"'$PWD'\",\"type\":\"app\",\"agent_type\":\"cline\",\"time\":'$(date +%s)',\"metadata\":{\"source\":\"cline-hook\"}}' >> \"$HOME/.config/ttime/inbox/cline.jsonl\""
+  ]
+}
+```
+
+### OpenCode hook example
+
+OpenCode supports hooks in its configuration file (`.opencode/config.toml`):
+
+```toml
+[hooks]
+post_action = [
+  "mkdir -p \"$HOME/.config/ttime/inbox\" && printf '%s\\n' '{\"entity\":\"'$PWD'\",\"type\":\"app\",\"agent_type\":\"opencode\",\"time\":'$(date +%s)',\"metadata\":{\"source\":\"opencode-hook\"}}' >> \"$HOME/.config/ttime/inbox/opencode.jsonl\""
+]
+```
+
+### GitHub Copilot CLI hook example
+
+For the `gh copilot` CLI, create a wrapper script to capture usage:
+
+```bash
+#!/bin/bash
+# copilot-wrapper.sh - Wrap gh copilot suggest and emit stats
+
+mkdir -p "$HOME/.config/ttime/inbox"
+START_TIME=$(date +%s)
+
+# Run the actual copilot command
+gh copilot "$@"
+EXIT_CODE=$?
+
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+
+# Emit heartbeat
+printf '%s\\n' "{\"entity\":\"$PWD\",\"type\":\"app\",\"agent_type\":\"copilot_cli\",\"time\":$END_TIME,\"metadata\":{\"duration_seconds\":$DURATION,\"command\":\"$*\"}}" >> "$HOME/.config/ttime/inbox/copilot.jsonl"
+
+exit $EXIT_CODE
+```
+
+Add to your shell profile (e.g., `~/.bashrc`, `~/.zshrc`):
+
+```bash
+alias copilot='/path/to/copilot-wrapper.sh'
+```
+
 ### Other supported sources
 
-- Codex: write hook or session-derived JSONL lines into `inbox/codex.jsonl`
-- GitHub Copilot CLI: export session events into `inbox/copilot.jsonl`
-- Continue: point development-data output or a small wrapper into `inbox/continue.jsonl`
-- Aider: append derived events from `.aider.chat.history.md` or notifications into `inbox/aider.jsonl`
+- **Cosine/COS**: configure hooks to write JSONL events into `inbox/cosine.jsonl` or `inbox/cos.jsonl`
+- **Cline**: add post-tool hooks to append events to `inbox/cline.jsonl`
+- **Codex**: write hook or session-derived JSONL lines into `inbox/codex.jsonl`
+- **GitHub Copilot CLI**: use `gh copilot` with wrapper scripts that export session events into `inbox/copilot.jsonl`
+- **OpenCode**: configure hooks to write events to `inbox/opencode.jsonl`
+- **Continue**: point development-data output or a small wrapper into `inbox/continue.jsonl`
+- **Aider**: append derived events from `.aider.chat.history.md` or notifications into `inbox/aider.jsonl`
 
 The daemon intentionally does not scrape undocumented IDE databases. The stable contract is: if the local tool can emit JSONL heartbeat records, `ttime daemon` can ingest them.
 
