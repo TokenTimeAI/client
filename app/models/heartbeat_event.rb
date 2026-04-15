@@ -15,6 +15,11 @@ class HeartbeatEvent < ApplicationRecord
 
   scope :by_agent, ->(agent) { where(agent_type: agent) }
   scope :by_language, ->(lang) { where(language: lang) }
+  scope :with_session_timing, -> {
+    where.not(session_duration_seconds: nil)
+      .or(where.not(agent_active_seconds: nil))
+      .or(where.not(human_active_seconds: nil))
+  }
 
   def timestamp
     Time.at(time).utc

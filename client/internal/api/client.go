@@ -29,6 +29,12 @@ type Heartbeat struct {
 	AgentType        string         `json:"agent_type,omitempty"`
 	Time             float64        `json:"time"`
 	Duration         float64        `json:"duration,omitempty"`
+	SessionStartedAt *time.Time     `json:"session_started_at,omitempty"`
+	SessionEndedAt   *time.Time     `json:"session_ended_at,omitempty"`
+	SessionDurationSeconds *int     `json:"session_duration_seconds,omitempty"`
+	AgentActiveSeconds *int         `json:"agent_active_seconds,omitempty"`
+	HumanActiveSeconds *int         `json:"human_active_seconds,omitempty"`
+	IdleSeconds      *int           `json:"idle_seconds,omitempty"`
 	IsWrite          bool           `json:"is_write,omitempty"`
 	TokensUsed       int            `json:"tokens_used,omitempty"`
 	LinesAdded       int            `json:"lines_added,omitempty"`

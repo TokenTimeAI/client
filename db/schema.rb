@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_14_020001) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_15_061000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -26,13 +26,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_020001) do
     t.index ["user_id"], name: "index_api_keys_on_user_id"
   end
 
+  create_table "device_authorizations", id: :string, force: :cascade do |t|
+    t.string "api_key_id"
+    t.datetime "approved_at"
+    t.datetime "claimed_at"
+    t.datetime "created_at", null: false
+    t.string "device_code_digest", null: false
+    t.datetime "expires_at", null: false
+    t.integer "interval", default: 5, null: false
+    t.string "machine_name"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.string "user_code", null: false
+    t.string "user_id"
+    t.index ["api_key_id"], name: "index_device_authorizations_on_api_key_id"
+    t.index ["device_code_digest"], name: "index_device_authorizations_on_device_code_digest", unique: true
+    t.index ["expires_at"], name: "index_device_authorizations_on_expires_at"
+    t.index ["status"], name: "index_device_authorizations_on_status"
+    t.index ["user_code"], name: "index_device_authorizations_on_user_code", unique: true
+    t.index ["user_id"], name: "index_device_authorizations_on_user_id"
+  end
+
   create_table "heartbeat_events", id: :string, force: :cascade do |t|
     t.string "agent_type", null: false
+    t.integer "agent_active_seconds"
     t.string "branch"
     t.decimal "cost_usd", precision: 10, scale: 8
     t.datetime "created_at", null: false
     t.string "entity"
     t.string "entity_type"
+    t.datetime "session_ended_at"
+    t.integer "human_active_seconds"
+    t.integer "idle_seconds"
     t.boolean "is_write", default: false
     t.string "language"
     t.integer "lines_added"
@@ -41,12 +66,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_020001) do
     t.jsonb "metadata", default: {}
     t.string "operating_system"
     t.string "project_id"
+    t.datetime "session_started_at"
+    t.integer "session_duration_seconds"
     t.float "time", null: false
     t.integer "tokens_used"
     t.datetime "updated_at", null: false
     t.string "user_id", null: false
     t.index ["project_id"], name: "index_heartbeat_events_on_project_id"
     t.index ["user_id", "agent_type"], name: "index_heartbeat_events_on_user_id_and_agent_type"
+    t.index ["user_id", "session_ended_at"], name: "index_heartbeat_events_on_user_id_and_session_ended_at"
+    t.index ["user_id", "session_started_at"], name: "index_heartbeat_events_on_user_id_and_session_started_at"
     t.index ["user_id", "language"], name: "index_heartbeat_events_on_user_id_and_language"
     t.index ["user_id", "time"], name: "index_heartbeat_events_on_user_id_and_time"
     t.index ["user_id"], name: "index_heartbeat_events_on_user_id"
@@ -90,6 +119,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_020001) do
   end
 
   add_foreign_key "api_keys", "users"
+  add_foreign_key "device_authorizations", "api_keys"
+  add_foreign_key "device_authorizations", "users"
   add_foreign_key "heartbeat_events", "projects"
   add_foreign_key "heartbeat_events", "users"
   add_foreign_key "projects", "users"

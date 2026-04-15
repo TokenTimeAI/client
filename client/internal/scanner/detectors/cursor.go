@@ -2,30 +2,32 @@ package detectors
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/ttime-ai/ttime/client/internal/scanner"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-// CursorDetector scans Cursor editor data
 type CursorDetector struct {
 	scanner.BaseDetector
 	dataDir string
 }
 
 func NewCursorDetector() scanner.Detector {
-	paths := []string{
-		"~/Library/Application Support/Cursor",
-		"~/.config/Cursor",
-		"~/AppData/Roaming/Cursor",
-		"~/.cursor",
-	}
 	return &CursorDetector{
-		BaseDetector: scanner.NewBaseDetector("cursor", "Cursor IDE conversations", paths, 50),
+		BaseDetector: scanner.NewBaseDetector("cursor", "Cursor IDE conversations", []string{
+			"~/Library/Application Support/Cursor",
+			"~/.config/Cursor",
+			"~/AppData/Roaming/Cursor",
+			"~/.cursor",
+		}, 50),
 	}
 }
 
@@ -44,104 +46,118 @@ func (d *CursorDetector) Detect(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
+type cursorComposerHeaders struct {
+	AllComposers []struct {
+		ComposerID      string         `json:"composerId"`
+		Name            string         `json:"name"`
+		Subtitle        string         `json:"subtitle"`
+		CreatedAt       int64          `json:"createdAt"`
+		LastUpdatedAt   int64          `json:"lastUpdatedAt"`
+		CheckpointAt    int64          `json:"conversationCheckpointLastUpdatedAt"`
+		UnifiedMode     string         `json:"unifiedMode"`
+		ForceMode       string         `json:"forceMode"`
+		TotalLinesAdded int            `json:"totalLinesAdded"`
+		TotalLinesRemoved int          `json:"totalLinesRemoved"`
+		WorkspaceIdentifier map[string]any `json:"workspaceIdentifier"`
+	} `json:"allComposers"`
+}
+
 func (d *CursorDetector) Scan(ctx context.Context, state scanner.SourceState) ([]scanner.ScanResult, scanner.SourceState, error) {
 	if d.dataDir == "" {
 		return nil, state, nil
 	}
 
-	workspacesDir := filepath.Join(d.dataDir, "User", "workspaceStorage")
-	if !scanner.DirExists(workspacesDir) {
-		workspacesDir = filepath.Join(d.dataDir, "workspaces")
-	}
-
-	entries, err := os.ReadDir(workspacesDir)
+	db, err := sql.Open("sqlite3", filepath.Join(d.dataDir, "User", "globalStorage", "state.vscdb"))
 	if err != nil {
-		if os.IsNotExist(err) {
+		return nil, state, fmt.Errorf("open cursor global storage db: %w", err)
+	}
+	defer db.Close()
+
+	var raw string
+	if err := db.QueryRowContext(ctx, "SELECT value FROM ItemTable WHERE key = 'composer.composerHeaders'").Scan(&raw); err != nil {
+		if err == sql.ErrNoRows {
 			return nil, state, nil
 		}
-		return nil, state, fmt.Errorf("read workspaces dir: %w", err)
+		return nil, state, fmt.Errorf("query cursor composer headers: %w", err)
 	}
 
-	var results []scanner.ScanResult
+	var headers cursorComposerHeaders
+	if err := json.Unmarshal([]byte(raw), &headers); err != nil {
+		return nil, state, fmt.Errorf("decode cursor composer headers: %w", err)
+	}
+
+	sort.Slice(headers.AllComposers, func(i, j int) bool {
+		if headers.AllComposers[i].LastUpdatedAt != headers.AllComposers[j].LastUpdatedAt {
+			return headers.AllComposers[i].LastUpdatedAt < headers.AllComposers[j].LastUpdatedAt
+		}
+		return headers.AllComposers[i].ComposerID < headers.AllComposers[j].ComposerID
+	})
+
+	results := make([]scanner.ScanResult, 0, len(headers.AllComposers))
 	newState := state
 
-	for _, workspaceEntry := range entries {
-		if !workspaceEntry.IsDir() {
+	for _, composer := range headers.AllComposers {
+		select {
+		case <-ctx.Done():
+			return results, newState, ctx.Err()
+		default:
+		}
+
+		sessionID := strings.TrimSpace(composer.ComposerID)
+		if sessionID == "" || composer.LastUpdatedAt <= 0 {
 			continue
 		}
 
-		cursorDir := filepath.Join(workspacesDir, workspaceEntry.Name(), "cursor")
-		if !scanner.DirExists(cursorDir) {
+		endUnix := composer.LastUpdatedAt / 1000
+		if endUnix < state.LastScanTime || (endUnix == state.LastScanTime && sessionID <= state.LastRecordID) {
 			continue
 		}
 
-		convPath := filepath.Join(cursorDir, "conversations.json")
-		if !scanner.FileExists(convPath) {
-			continue
+		startedAt := time.UnixMilli(composer.CreatedAt).UTC()
+		endedAt := time.UnixMilli(composer.LastUpdatedAt).UTC()
+		sessionSeconds := durationSeconds(startedAt, endedAt)
+
+		title := strings.TrimSpace(composer.Name)
+		if title == "" {
+			title = strings.TrimSpace(composer.Subtitle)
+		}
+		entity := title
+		if entity == "" {
+			entity = sessionID
 		}
 
-		data, err := os.ReadFile(convPath)
-		if err != nil {
-			continue
+		workspaceID := strings.TrimSpace(stringValue(composer.WorkspaceIdentifier["id"]))
+		project := projectNameFromPath(workspaceID)
+		if project == "" {
+			project = "cursor"
 		}
 
-		var conversations []struct {
-			ID        string `json:"id"`
-			Title     string `json:"title"`
-			Workspace string `json:"workspace"`
-			Created   int64  `json:"created"`
-			Modified  int64  `json:"modified"`
-			Messages  []struct {
-				ID               string  `json:"id"`
-				Role             string  `json:"role"`
-				Content          string  `json:"content"`
-				Timestamp        int64   `json:"timestamp"`
-				PromptTokens     int     `json:"prompt_tokens"`
-				CompletionTokens int     `json:"completion_tokens"`
-				TotalTokens      int     `json:"total_tokens"`
-				Model            string  `json:"model"`
-			} `json:"messages"`
-		}
+		results = append(results, scanner.ScanResult{
+			AgentType:              "cursor",
+			Type:                   "conversation",
+			Entity:                 entity,
+			Time:                   float64(endUnix),
+			Timestamp:              endedAt,
+			Duration:               float64(sessionSeconds),
+			SessionStartedAt:       timePtr(startedAt),
+			SessionEndedAt:         timePtr(endedAt),
+			SessionDurationSeconds: intPtr(sessionSeconds),
+			ConversationID:         sessionID,
+			MessageID:              sessionID,
+			Project:                project,
+			LinesAdded:             composer.TotalLinesAdded,
+			LinesDeleted:           composer.TotalLinesRemoved,
+			Metadata: map[string]any{
+				"title":                 title,
+				"workspace_id":          workspaceID,
+				"unified_mode":          composer.UnifiedMode,
+				"force_mode":            composer.ForceMode,
+				"checkpoint_updated_at": composer.CheckpointAt,
+			},
+		})
 
-		if err := json.Unmarshal(data, &conversations); err != nil {
-			continue
-		}
-
-		for _, conv := range conversations {
-			if conv.Modified <= state.LastScanTime {
-				continue
-			}
-
-			for _, msg := range conv.Messages {
-				if msg.Role != "assistant" {
-					continue
-				}
-
-				result := scanner.ScanResult{
-					AgentType:        "cursor",
-					Type:             "conversation",
-					Entity:           conv.Workspace,
-					Time:             float64(msg.Timestamp),
-					Timestamp:        time.Unix(msg.Timestamp, 0),
-					ConversationID:   conv.ID,
-					MessageID:        msg.ID,
-					PromptTokens:     msg.PromptTokens,
-					CompletionTokens: msg.CompletionTokens,
-					TotalTokens:      msg.TotalTokens,
-					Model:            msg.Model,
-					Project:          conv.Workspace,
-					Metadata: map[string]any{
-						"title": conv.Title,
-					},
-				}
-				results = append(results, result)
-
-				if msg.Timestamp > newState.LastScanTime {
-					newState.LastScanTime = msg.Timestamp
-					newState.LastRecordID = msg.ID
-				}
-			}
-		}
+		newState.LastScanTime = endUnix
+		newState.LastRecordID = sessionID
 	}
 
 	return results, newState, nil

@@ -26,7 +26,13 @@ class Api::V1::HeartbeatsControllerTest < ActionDispatch::IntegrationTest
       is_write: true,
       tokens_used: 1000,
       lines_added: 20,
-      branch: "main"
+      branch: "main",
+      session_started_at: "2026-04-14T10:00:00Z",
+      session_ended_at: "2026-04-14T10:15:00Z",
+      session_duration_seconds: 900,
+      agent_active_seconds: 600,
+      human_active_seconds: 240,
+      idle_seconds: 60
     }
 
     assert_difference("HeartbeatEvent.count", 1) do
@@ -39,6 +45,9 @@ class Api::V1::HeartbeatsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "claude_code", data.dig("data", "agent_type")
     assert_equal "Ruby", data.dig("data", "language")
     assert_equal "test-project", data.dig("data", "project")
+    assert_equal 900, data.dig("data", "session_duration_seconds")
+    assert_equal 600, data.dig("data", "agent_active_seconds")
+    assert_equal 240, data.dig("data", "human_active_seconds")
     assert_equal 26, data.dig("data", "id").length  # ULID length
   end
 

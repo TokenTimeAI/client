@@ -1,29 +1,26 @@
 package detectors
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/ttime-ai/ttime/client/internal/scanner"
 )
 
-// CodexDetector scans OpenAI Codex CLI data
 type CodexDetector struct {
 	scanner.BaseDetector
 	configDir string
 }
 
 func NewCodexDetector() scanner.Detector {
-	paths := []string{
-		"~/.codex",
-		"~/.config/codex",
-		"~/.local/share/codex",
-		"~/Library/Application Support/Codex",
-	}
+	paths := []string{"~/.codex", "~/.config/codex", "~/.local/share/codex", "~/Library/Application Support/Codex"}
 	return &CodexDetector{
 		BaseDetector: scanner.NewBaseDetector("codex", "OpenAI Codex CLI conversations", paths, 50),
 	}
@@ -44,89 +41,253 @@ func (d *CodexDetector) Detect(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
+type codexThreadIndexEntry struct {
+	ID         string `json:"id"`
+	ThreadName string `json:"thread_name"`
+}
+
+type codexSessionSummary struct {
+	SessionID        string
+	Title            string
+	CWD              string
+	Model            string
+	StartedAt        time.Time
+	EndedAt          time.Time
+	AgentActive      time.Duration
+	HumanActive      time.Duration
+	PromptTokens     int
+	CompletionTokens int
+	TotalTokens      int
+}
+
 func (d *CodexDetector) Scan(ctx context.Context, state scanner.SourceState) ([]scanner.ScanResult, scanner.SourceState, error) {
 	if d.configDir == "" {
 		return nil, state, nil
 	}
 
+	titles := d.loadThreadTitles()
+	paths := make([]string, 0, 128)
 	sessionsDir := filepath.Join(d.configDir, "sessions")
-	entries, err := os.ReadDir(sessionsDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, state, nil
+	if err := filepath.WalkDir(sessionsDir, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return nil
 		}
-		return nil, state, fmt.Errorf("read sessions dir: %w", err)
+		if entry.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(entry.Name(), ".jsonl") {
+			paths = append(paths, path)
+		}
+		return nil
+	}); err != nil && !os.IsNotExist(err) {
+		return nil, state, fmt.Errorf("walk codex sessions: %w", err)
 	}
 
-	var results []scanner.ScanResult
+	summaries := make([]codexSessionSummary, 0, len(paths))
+	for _, path := range paths {
+		select {
+		case <-ctx.Done():
+			return nil, state, ctx.Err()
+		default:
+		}
+
+		summary, ok := summarizeCodexSession(path, titles)
+		if !ok || summary.SessionID == "" || summary.EndedAt.IsZero() {
+			continue
+		}
+		summaries = append(summaries, summary)
+	}
+
+	sort.Slice(summaries, func(i, j int) bool {
+		if !summaries[i].EndedAt.Equal(summaries[j].EndedAt) {
+			return summaries[i].EndedAt.Before(summaries[j].EndedAt)
+		}
+		return summaries[i].SessionID < summaries[j].SessionID
+	})
+
+	results := make([]scanner.ScanResult, 0, len(summaries))
 	newState := state
 
-	for _, entry := range entries {
-		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+	for _, summary := range summaries {
+		endUnix := summary.EndedAt.Unix()
+		if endUnix < state.LastScanTime || (endUnix == state.LastScanTime && summary.SessionID <= state.LastRecordID) {
 			continue
 		}
 
-		sessionPath := filepath.Join(sessionsDir, entry.Name())
-		data, err := os.ReadFile(sessionPath)
-		if err != nil {
-			continue
+		sessionSeconds := durationSeconds(summary.StartedAt, summary.EndedAt)
+		agentSeconds := int(summary.AgentActive.Round(time.Second).Seconds())
+		humanSeconds := int(summary.HumanActive.Round(time.Second).Seconds())
+		idleSeconds := sessionSeconds - agentSeconds - humanSeconds
+		if idleSeconds < 0 {
+			idleSeconds = 0
 		}
 
-		var session struct {
-			ID       string `json:"id"`
-			Project  string `json:"project"`
-			Path     string `json:"path"`
-			Modified int64  `json:"modified"`
-			Messages []struct {
-				ID               string  `json:"id"`
-				Role             string  `json:"role"`
-				Timestamp        int64   `json:"timestamp"`
-				PromptTokens     int     `json:"prompt_tokens"`
-				CompletionTokens int     `json:"completion_tokens"`
-				TotalTokens      int     `json:"total_tokens"`
-				Model            string  `json:"model"`
-				CostUSD          float64 `json:"cost_usd"`
-			} `json:"messages"`
-		}
+		results = append(results, scanner.ScanResult{
+			AgentType:              "codex",
+			Type:                   "conversation",
+			Entity:                 summary.CWD,
+			Time:                   float64(endUnix),
+			Timestamp:              summary.EndedAt,
+			Duration:               float64(sessionSeconds),
+			SessionStartedAt:       timePtr(summary.StartedAt),
+			SessionEndedAt:         timePtr(summary.EndedAt),
+			SessionDurationSeconds: intPtr(sessionSeconds),
+			AgentActiveSeconds:     intPtr(agentSeconds),
+			HumanActiveSeconds:     intPtr(humanSeconds),
+			IdleSeconds:            intPtr(idleSeconds),
+			ConversationID:         summary.SessionID,
+			MessageID:              summary.SessionID,
+			PromptTokens:           summary.PromptTokens,
+			CompletionTokens:       summary.CompletionTokens,
+			TotalTokens:            summary.TotalTokens,
+			Model:                  summary.Model,
+			Project:                projectNameFromPath(summary.CWD),
+			Metadata: map[string]any{
+				"title": summary.Title,
+			},
+		})
 
-		if err := json.Unmarshal(data, &session); err != nil {
-			continue
-		}
-
-		if session.Modified <= state.LastScanTime {
-			continue
-		}
-
-		for _, msg := range session.Messages {
-			if msg.Role != "assistant" {
-				continue
-			}
-
-			result := scanner.ScanResult{
-				AgentType:        "codex",
-				Type:             "conversation",
-				Entity:           session.Path,
-				Time:             float64(msg.Timestamp),
-				Timestamp:        time.Unix(msg.Timestamp, 0),
-				ConversationID:   session.ID,
-				MessageID:        msg.ID,
-				PromptTokens:     msg.PromptTokens,
-				CompletionTokens: msg.CompletionTokens,
-				TotalTokens:      msg.TotalTokens,
-				Model:            msg.Model,
-				CostUSD:          msg.CostUSD,
-				Project:          session.Project,
-			}
-			results = append(results, result)
-
-			if msg.Timestamp > newState.LastScanTime {
-				newState.LastScanTime = msg.Timestamp
-				newState.LastRecordID = msg.ID
-			}
-		}
+		newState.LastScanTime = endUnix
+		newState.LastRecordID = summary.SessionID
 	}
 
 	return results, newState, nil
+}
+
+func (d *CodexDetector) loadThreadTitles() map[string]string {
+	indexPath := filepath.Join(d.configDir, "session_index.jsonl")
+	file, err := os.Open(indexPath)
+	if err != nil {
+		return map[string]string{}
+	}
+	defer file.Close()
+
+	titles := make(map[string]string)
+	lineScanner := bufio.NewScanner(file)
+	for lineScanner.Scan() {
+		var entry codexThreadIndexEntry
+		if err := json.Unmarshal(lineScanner.Bytes(), &entry); err != nil {
+			continue
+		}
+		if strings.TrimSpace(entry.ID) != "" {
+			titles[entry.ID] = strings.TrimSpace(entry.ThreadName)
+		}
+	}
+	return titles
+}
+
+func summarizeCodexSession(path string, titles map[string]string) (codexSessionSummary, bool) {
+	file, err := os.Open(path)
+	if err != nil {
+		return codexSessionSummary{}, false
+	}
+	defer file.Close()
+
+	var summary codexSessionSummary
+	var lastTaskCompletedAt *time.Time
+	seenSessionMeta := false
+	lineScanner := bufio.NewScanner(file)
+
+	for lineScanner.Scan() {
+		var envelope struct {
+			Timestamp string          `json:"timestamp"`
+			Type      string          `json:"type"`
+			Payload   json.RawMessage `json:"payload"`
+		}
+		if err := json.Unmarshal(lineScanner.Bytes(), &envelope); err != nil {
+			continue
+		}
+
+		switch envelope.Type {
+		case "session_meta":
+			var payload struct {
+				ID        string `json:"id"`
+				Timestamp string `json:"timestamp"`
+				CWD       string `json:"cwd"`
+			}
+			if err := json.Unmarshal(envelope.Payload, &payload); err != nil {
+				continue
+			}
+			summary.SessionID = strings.TrimSpace(payload.ID)
+			summary.CWD = strings.TrimSpace(payload.CWD)
+			summary.Title = titles[summary.SessionID]
+			summary.StartedAt = parseRFC3339Any(payload.Timestamp).UTC()
+			seenSessionMeta = true
+		case "turn_context":
+			var payload struct {
+				Model string `json:"model"`
+				CWD   string `json:"cwd"`
+			}
+			if err := json.Unmarshal(envelope.Payload, &payload); err == nil {
+				if summary.Model == "" {
+					summary.Model = strings.TrimSpace(payload.Model)
+				}
+				if summary.CWD == "" {
+					summary.CWD = strings.TrimSpace(payload.CWD)
+				}
+			}
+		case "event_msg":
+			var payload struct {
+				Type        string `json:"type"`
+				StartedAt   int64  `json:"started_at"`
+				CompletedAt int64  `json:"completed_at"`
+				DurationMS  int64  `json:"duration_ms"`
+			}
+			if err := json.Unmarshal(envelope.Payload, &payload); err != nil {
+				continue
+			}
+			switch payload.Type {
+			case "task_started":
+				startedAt := time.Unix(payload.StartedAt, 0).UTC()
+				if summary.StartedAt.IsZero() {
+					summary.StartedAt = startedAt
+				}
+				if lastTaskCompletedAt != nil && startedAt.After(*lastTaskCompletedAt) {
+					summary.HumanActive += startedAt.Sub(*lastTaskCompletedAt)
+				}
+			case "task_complete":
+				completedAt := time.Unix(payload.CompletedAt, 0).UTC()
+				if payload.DurationMS > 0 {
+					summary.AgentActive += time.Duration(payload.DurationMS) * time.Millisecond
+				}
+				if completedAt.After(summary.EndedAt) {
+					summary.EndedAt = completedAt
+				}
+				lastTaskCompletedAt = &completedAt
+			case "token_count":
+				var tokenPayload struct {
+					Info struct {
+						LastTokenUsage struct {
+							InputTokens  int `json:"input_tokens"`
+							OutputTokens int `json:"output_tokens"`
+							TotalTokens  int `json:"total_tokens"`
+						} `json:"last_token_usage"`
+					} `json:"info"`
+				}
+				if err := json.Unmarshal(envelope.Payload, &tokenPayload); err == nil {
+					summary.PromptTokens += tokenPayload.Info.LastTokenUsage.InputTokens
+					summary.CompletionTokens += tokenPayload.Info.LastTokenUsage.OutputTokens
+					if tokenPayload.Info.LastTokenUsage.TotalTokens > 0 {
+						summary.TotalTokens += tokenPayload.Info.LastTokenUsage.TotalTokens
+					} else {
+						summary.TotalTokens += tokenPayload.Info.LastTokenUsage.InputTokens + tokenPayload.Info.LastTokenUsage.OutputTokens
+					}
+				}
+			}
+		}
+
+		if ts := parseRFC3339Any(envelope.Timestamp).UTC(); !ts.IsZero() && ts.After(summary.EndedAt) {
+			summary.EndedAt = ts
+		}
+	}
+
+	if !seenSessionMeta {
+		return codexSessionSummary{}, false
+	}
+	if summary.TotalTokens == 0 {
+		summary.TotalTokens = summary.PromptTokens + summary.CompletionTokens
+	}
+	return summary, true
 }
 
 func init() {

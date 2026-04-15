@@ -45,7 +45,9 @@ module Api
 
       def allowed_heartbeat_params
         %i[entity type language project branch time is_write lines_added lines_deleted
-           operating_system machine agent_type tokens_used cost_usd metadata]
+           operating_system machine agent_type tokens_used cost_usd metadata
+           session_started_at session_ended_at session_duration_seconds
+           agent_active_seconds human_active_seconds idle_seconds]
       end
 
       def build_heartbeat(attrs)
@@ -67,6 +69,12 @@ module Api
           agent_type: attrs[:agent_type] || "custom",
           tokens_used: attrs[:tokens_used],
           cost_usd: attrs[:cost_usd],
+          session_started_at: attrs[:session_started_at],
+          session_ended_at: attrs[:session_ended_at],
+          session_duration_seconds: attrs[:session_duration_seconds],
+          agent_active_seconds: attrs[:agent_active_seconds],
+          human_active_seconds: attrs[:human_active_seconds],
+          idle_seconds: attrs[:idle_seconds],
           metadata: attrs[:metadata] || {}
         )
       end
@@ -88,6 +96,12 @@ module Api
           time: heartbeat.time,
           project: heartbeat.project&.name,
           agent_type: heartbeat.agent_type,
+          session_started_at: heartbeat.session_started_at,
+          session_ended_at: heartbeat.session_ended_at,
+          session_duration_seconds: heartbeat.session_duration_seconds,
+          agent_active_seconds: heartbeat.agent_active_seconds,
+          human_active_seconds: heartbeat.human_active_seconds,
+          idle_seconds: heartbeat.idle_seconds,
           created_at: heartbeat.created_at
         }
       end

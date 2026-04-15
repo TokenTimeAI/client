@@ -55,4 +55,30 @@ class HeartbeatEventTest < ActiveSupport::TestCase
     assert_includes results, recent_hb
     assert_not_includes results, old_hb
   end
+
+  test "supports native session timing dimensions" do
+    started_at = Time.zone.parse("2026-04-14 10:00:00 UTC")
+    ended_at = Time.zone.parse("2026-04-14 10:10:00 UTC")
+
+    hb = HeartbeatEvent.create!(
+      user: @user,
+      agent_type: "cosine",
+      entity: "/Users/pz/w/cosine/apps/cli2",
+      entity_type: "conversation",
+      time: ended_at.to_f,
+      session_started_at: started_at,
+      session_ended_at: ended_at,
+      session_duration_seconds: 600,
+      agent_active_seconds: 420,
+      human_active_seconds: 120,
+      idle_seconds: 60
+    )
+
+    assert_equal started_at, hb.session_started_at
+    assert_equal ended_at, hb.session_ended_at
+    assert_equal 600, hb.session_duration_seconds
+    assert_equal 420, hb.agent_active_seconds
+    assert_equal 120, hb.human_active_seconds
+    assert_equal 60, hb.idle_seconds
+  end
 end

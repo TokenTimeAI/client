@@ -13,7 +13,7 @@
   </div>
 
   <!-- Stats Cards -->
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
     <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center">
@@ -24,6 +24,48 @@
         <div>
           <p class="text-xs text-gray-500 uppercase tracking-wide">Coding Time Today</p>
           <p class="text-xl font-bold text-white mt-0.5"><%= format_duration(@stats[:coding_time_today]) %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 uppercase tracking-wide">Session Time Today</p>
+          <p class="text-xl font-bold text-white mt-0.5"><%= format_duration(@stats[:session_time_today]) %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.866-3.582 7-8 7 0-3.866 3.582-7 8-7zm0 0c0-3.866 3.582-7 8-7 0 3.866-3.582 7-8 7zm0 0v10" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 uppercase tracking-wide">Agent Time Today</p>
+          <p class="text-xl font-bold text-white mt-0.5"><%= format_duration(@stats[:agent_time_today]) %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-pink-500/20 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12M6 12h8m-8 5h12" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 uppercase tracking-wide">Human Time Today</p>
+          <p class="text-xl font-bold text-white mt-0.5"><%= format_duration(@stats[:human_time_today]) %></p>
         </div>
       </div>
     </div>
@@ -85,6 +127,27 @@
           <span class="text-xs text-gray-500"><%= format_duration(day[:seconds]) %></span>
           <div class="w-full bg-indigo-500 rounded-t" style="height: <%= height %>%;" title="<%= day[:label] %>: <%= format_duration(day[:seconds]) %>"></div>
           <span class="text-xs text-gray-500"><%= day[:label] %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <h2 class="text-sm font-medium text-gray-400 uppercase tracking-wide mb-4">7-Day Session Timing</h2>
+    <div class="space-y-3">
+      <% @daily_session_timing.each do |day| %>
+        <% total = [day[:session_seconds], 1].max %>
+        <% agent_pct = ((day[:agent_seconds].to_f / total) * 100).round %>
+        <% human_pct = ((day[:human_seconds].to_f / total) * 100).round %>
+        <div>
+          <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+            <span><%= day[:label] %></span>
+            <span>session <%= format_duration(day[:session_seconds]) %> · agent <%= format_duration(day[:agent_seconds]) %> · human <%= format_duration(day[:human_seconds]) %></span>
+          </div>
+          <div class="flex h-2 overflow-hidden rounded-full bg-gray-800">
+            <div class="bg-emerald-500" style="width: <%= agent_pct %>%;"></div>
+            <div class="bg-pink-500" style="width: <%= human_pct %>%;"></div>
+          </div>
         </div>
       <% end %>
     </div>
@@ -153,6 +216,7 @@
               <th class="pb-2 font-medium">Language</th>
               <th class="pb-2 font-medium">Agent</th>
               <th class="pb-2 font-medium">Project</th>
+              <th class="pb-2 font-medium">Agent/Human</th>
               <th class="pb-2 font-medium text-right">Time</th>
             </tr>
           </thead>
@@ -163,6 +227,15 @@
                 <td class="py-2"><%= hb.language || "—" %></td>
                 <td class="py-2 capitalize"><%= hb.agent_type.humanize %></td>
                 <td class="py-2 text-indigo-400"><%= hb.project&.name || "—" %></td>
+                <td class="py-2 text-xs text-gray-500">
+                  <% if hb.agent_active_seconds.present? || hb.human_active_seconds.present? %>
+                    <span class="text-emerald-400"><%= format_duration(hb.agent_active_seconds.to_i) %></span>
+                    /
+                    <span class="text-pink-400"><%= format_duration(hb.human_active_seconds.to_i) %></span>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
                 <td class="py-2 text-gray-500 text-right text-xs"><%= time_ago_in_words(hb.timestamp) %> ago</td>
               </tr>
             <% end %>

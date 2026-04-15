@@ -2,6 +2,7 @@ package normalize
 
 import (
 	"runtime"
+	"time"
 
 	"github.com/ttime-ai/ttime/client/internal/api"
 	"github.com/ttime-ai/ttime/client/internal/collector"
@@ -17,6 +18,20 @@ func Event(raw collector.Event, opts Options) api.Heartbeat {
 		eventType = "file"
 	}
 
+	var sessionStartedAt *time.Time
+	if raw.SessionStartedAt != nil {
+		if parsed, err := time.Parse(time.RFC3339, *raw.SessionStartedAt); err == nil {
+			sessionStartedAt = &parsed
+		}
+	}
+
+	var sessionEndedAt *time.Time
+	if raw.SessionEndedAt != nil {
+		if parsed, err := time.Parse(time.RFC3339, *raw.SessionEndedAt); err == nil {
+			sessionEndedAt = &parsed
+		}
+	}
+
 	return api.Heartbeat{
 		Entity:           raw.Entity,
 		Type:             eventType,
@@ -26,6 +41,12 @@ func Event(raw collector.Event, opts Options) api.Heartbeat {
 		AgentType:        raw.AgentType,
 		Time:             raw.Time,
 		Duration:         raw.Duration,
+		SessionStartedAt: sessionStartedAt,
+		SessionEndedAt:   sessionEndedAt,
+		SessionDurationSeconds: raw.SessionDurationSeconds,
+		AgentActiveSeconds: raw.AgentActiveSeconds,
+		HumanActiveSeconds: raw.HumanActiveSeconds,
+		IdleSeconds:      raw.IdleSeconds,
 		IsWrite:          raw.IsWrite,
 		TokensUsed:       raw.TokensUsed,
 		LinesAdded:       raw.LinesAdded,

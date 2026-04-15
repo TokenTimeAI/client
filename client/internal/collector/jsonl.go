@@ -22,6 +22,12 @@ type Event struct {
 	AgentType        string         `json:"agent_type,omitempty"`
 	Time             float64        `json:"time"`
 	Duration         float64        `json:"duration,omitempty"`
+	SessionStartedAt *string        `json:"session_started_at,omitempty"`
+	SessionEndedAt   *string        `json:"session_ended_at,omitempty"`
+	SessionDurationSeconds *int     `json:"session_duration_seconds,omitempty"`
+	AgentActiveSeconds *int         `json:"agent_active_seconds,omitempty"`
+	HumanActiveSeconds *int         `json:"human_active_seconds,omitempty"`
+	IdleSeconds      *int           `json:"idle_seconds,omitempty"`
 	IsWrite          bool           `json:"is_write,omitempty"`
 	TokensUsed       int            `json:"tokens_used,omitempty"`
 	LinesAdded       int            `json:"lines_added,omitempty"`
@@ -151,6 +157,12 @@ func parseEvent(line []byte) (Event, error) {
 		AgentType:        getString(body, "agent_type"),
 		Time:             getFloat(body, "time"),
 		Duration:         getFloat(body, "duration"),
+		SessionStartedAt: getOptionalString(body, "session_started_at"),
+		SessionEndedAt:   getOptionalString(body, "session_ended_at"),
+		SessionDurationSeconds: getOptionalInt(body, "session_duration_seconds"),
+		AgentActiveSeconds: getOptionalInt(body, "agent_active_seconds"),
+		HumanActiveSeconds: getOptionalInt(body, "human_active_seconds"),
+		IdleSeconds:      getOptionalInt(body, "idle_seconds"),
 		IsWrite:          getBool(body, "is_write"),
 		TokensUsed:       getInt(body, "tokens_used"),
 		LinesAdded:       getInt(body, "lines_added"),
@@ -193,6 +205,23 @@ func (c *JSONLCollector) saveOffsets(offsets fileOffsets) error {
 	}
 	data = append(data, '\n')
 	return os.WriteFile(c.StatePath, data, 0o600)
+}
+
+func getOptionalString(body map[string]any, key string) *string {
+	value := getString(body, key)
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func getOptionalInt(body map[string]any, key string) *int {
+	value, ok := body[key]
+	if !ok || value == nil {
+		return nil
+	}
+	parsed := getInt(body, key)
+	return &parsed
 }
 
 func getString(body map[string]any, key string) string {
