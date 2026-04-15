@@ -246,7 +246,8 @@ client/
 │   └── updater/           # Self-update mechanism
 ├── testdata/              # Test fixtures
 ├── Makefile               # Build automation
-└── .goreleaser.yml        # Release configuration
+├── .goreleaser.yml        # Release configuration
+└── CONTRIBUTING.md        # Contribution guidelines
 ```
 
 ## Supported Agents
@@ -268,6 +269,10 @@ The client can detect and scan the following AI coding assistants:
 | OpenCode | `opencode` | `~/.opencode`, `~/.config/opencode` |
 | Hermes | `hermes` | `~/.hermes`, `~/.config/hermes` |
 | Codex | `codex` | `~/.codex`, `~/.config/codex` |
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on submitting issues and pull requests.
 
 ## Support
 
