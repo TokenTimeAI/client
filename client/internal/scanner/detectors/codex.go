@@ -58,6 +58,19 @@ type codexSessionSummary struct {
 	PromptTokens     int
 	CompletionTokens int
 	TotalTokens      int
+	TokensKnown      bool
+	HasCumulative    bool
+}
+
+type codexTokenInfo struct {
+	TotalTokenUsage codexTokenUsage `json:"total_token_usage"`
+	LastTokenUsage  codexTokenUsage `json:"last_token_usage"`
+}
+
+type codexTokenUsage struct {
+	InputTokens  int `json:"input_tokens"`
+	OutputTokens int `json:"output_tokens"`
+	TotalTokens  int `json:"total_tokens"`
 }
 
 func (d *CodexDetector) Scan(ctx context.Context, state scanner.SourceState) ([]scanner.ScanResult, scanner.SourceState, error) {
@@ -256,21 +269,33 @@ func summarizeCodexSession(path string, titles map[string]string) (codexSessionS
 				lastTaskCompletedAt = &completedAt
 			case "token_count":
 				var tokenPayload struct {
-					Info struct {
-						LastTokenUsage struct {
-							InputTokens  int `json:"input_tokens"`
-							OutputTokens int `json:"output_tokens"`
-							TotalTokens  int `json:"total_tokens"`
-						} `json:"last_token_usage"`
-					} `json:"info"`
+					Info codexTokenInfo `json:"info"`
 				}
 				if err := json.Unmarshal(envelope.Payload, &tokenPayload); err == nil {
-					summary.PromptTokens += tokenPayload.Info.LastTokenUsage.InputTokens
-					summary.CompletionTokens += tokenPayload.Info.LastTokenUsage.OutputTokens
-					if tokenPayload.Info.LastTokenUsage.TotalTokens > 0 {
-						summary.TotalTokens += tokenPayload.Info.LastTokenUsage.TotalTokens
+					summary.TokensKnown = true
+
+					totalUsage := tokenPayload.Info.TotalTokenUsage
+					if totalUsage.TotalTokens > 0 {
+						summary.HasCumulative = true
+						if totalUsage.TotalTokens > summary.TotalTokens {
+							summary.PromptTokens = totalUsage.InputTokens
+							summary.CompletionTokens = totalUsage.OutputTokens
+							summary.TotalTokens = totalUsage.TotalTokens
+						}
+						continue
+					}
+
+					if summary.HasCumulative {
+						continue
+					}
+
+					lastUsage := tokenPayload.Info.LastTokenUsage
+					summary.PromptTokens += lastUsage.InputTokens
+					summary.CompletionTokens += lastUsage.OutputTokens
+					if lastUsage.TotalTokens > 0 {
+						summary.TotalTokens += lastUsage.TotalTokens
 					} else {
-						summary.TotalTokens += tokenPayload.Info.LastTokenUsage.InputTokens + tokenPayload.Info.LastTokenUsage.OutputTokens
+						summary.TotalTokens += lastUsage.InputTokens + lastUsage.OutputTokens
 					}
 				}
 			}
@@ -284,7 +309,7 @@ func summarizeCodexSession(path string, titles map[string]string) (codexSessionS
 	if !seenSessionMeta {
 		return codexSessionSummary{}, false
 	}
-	if summary.TotalTokens == 0 {
+	if summary.TotalTokens == 0 && summary.TokensKnown {
 		summary.TotalTokens = summary.PromptTokens + summary.CompletionTokens
 	}
 	return summary, true
