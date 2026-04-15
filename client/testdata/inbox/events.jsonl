@@ -1,2 +1,0 @@
-{"entity":"main.go","type":"file","project":"ttime-client","branch":"main","language":"Go","agent_type":"codex","time":1700000000,"is_write":true,"tokens_used":512,"lines_added":24,"lines_deleted":3,"cost_usd":0.0123,"metadata":{"tool":"write_file"}}
-{"entity":"app/models/user.rb","type":"file","project":"ttime-client","branch":"main","language":"Ruby","agent_type":"claude_code","time":1700000060,"is_write":false,"tokens_used":256,"lines_added":0,"lines_deleted":0,"cost_usd":0.0042,"metadata":{"source":"fixture"}}
