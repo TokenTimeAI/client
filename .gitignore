@@ -1,0 +1,25 @@
+# Build artifacts
+build/
+dist/
+ttime
+*.exe
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Test
+*.test
+*.out
+coverage.html
+coverage.out
+
+# Go
+vendor/
