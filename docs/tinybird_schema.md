@@ -125,7 +125,7 @@ ORDER BY date DESC, events DESC
 ```
 Agent (Claude Code / Codex / Cursor / etc.)
     ↓ POST /api/v1/heartbeats
-Rails (PostgreSQL — stores all events)
+Rails (SQLite locally, PostgreSQL in production — stores all events)
     ↓ TinybirdIngestJob (async via SolidQueue)
 Tinybird → ClickHouse (real-time analytics)
     ↓ Tinybird Pipes (SQL queries)

@@ -63,7 +63,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_15_061000) do
     t.integer "lines_added"
     t.integer "lines_deleted"
     t.string "machine"
-    t.jsonb "metadata", default: {}
+    t.json "metadata", default: {}
     t.string "operating_system"
     t.string "project_id"
     t.datetime "session_started_at"

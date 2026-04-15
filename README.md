@@ -14,7 +14,7 @@
 
 ## Tech Stack
 
-- **Rails 8** monolith (PostgreSQL, Hotwire, Stimulus, Tailwind CSS v4)
+- **Rails 8** monolith (SQLite locally, PostgreSQL in production, Hotwire, Stimulus, Tailwind CSS v4)
 - **Tinybird** (managed ClickHouse) for analytics data layer
 - **SolidQueue** for background jobs (Tinybird ingestion)
 - **Devise** for authentication
@@ -290,10 +290,10 @@ Sign in, open `http://localhost:3000/billing`, and start checkout from the billi
 
 | Variable              | Description                                     | Default                      |
 |-----------------------|-------------------------------------------------|------------------------------|
-| `DATABASE_URL`        | PostgreSQL connection URL                       | —                            |
-| `DB_USERNAME`         | PostgreSQL username                             | `ttime`                      |
-| `DB_PASSWORD`         | PostgreSQL password                             | `ttime`                      |
-| `DB_HOST`             | PostgreSQL host                                 | `localhost`                  |
+| `DATABASE_URL`        | Production PostgreSQL connection URL            | —                            |
+| `DB_USERNAME`         | Production PostgreSQL username                  | `ttime`                      |
+| `DB_PASSWORD`         | Production PostgreSQL password                  | `ttime`                      |
+| `DB_HOST`             | Production PostgreSQL host                      | `localhost`                  |
 | `TINYBIRD_TOKEN`      | Tinybird workspace token (global fallback)      | —                            |
 | `TINYBIRD_API_URL`    | Tinybird API base URL                           | `https://api.tinybird.co`    |
 | `RAILS_MASTER_KEY`    | Rails credentials decryption key                | —                            |
@@ -306,9 +306,11 @@ Sign in, open `http://localhost:3000/billing`, and start checkout from the billi
 
 ```bash
 bundle install
-bin/rails db:create db:migrate
+bin/rails db:prepare
 bin/dev  # starts Rails + Tailwind watcher
 ```
+
+Local development and test use SQLite files under `storage/`. PostgreSQL settings are only used for production.
 
 ## Tests
 

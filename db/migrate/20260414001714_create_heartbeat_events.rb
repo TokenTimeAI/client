@@ -17,7 +17,7 @@ class CreateHeartbeatEvents < ActiveRecord::Migration[8.1]
       t.integer :tokens_used
       t.decimal :cost_usd, precision: 10, scale: 8
       t.boolean :is_write, default: false
-      t.jsonb :metadata, default: {}
+      t.json :metadata, default: {}
 
       t.timestamps
     end
