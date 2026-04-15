@@ -21,36 +21,36 @@ type Client struct {
 }
 
 type Heartbeat struct {
-	Entity                 string         `json:"entity"`
-	Type                   string         `json:"type,omitempty"`
-	Project                string         `json:"project,omitempty"`
-	Branch                 string         `json:"branch,omitempty"`
-	Language               string         `json:"language,omitempty"`
-	AgentType              string         `json:"agent_type,omitempty"`
-	Time                   float64        `json:"time"`
-	Duration               float64        `json:"duration,omitempty"`
-	SessionStartedAt       *time.Time     `json:"session_started_at,omitempty"`
-	SessionEndedAt         *time.Time     `json:"session_ended_at,omitempty"`
-	SessionDurationSeconds *int           `json:"session_duration_seconds,omitempty"`
-	AgentActiveSeconds     *int           `json:"agent_active_seconds,omitempty"`
-	HumanActiveSeconds     *int           `json:"human_active_seconds,omitempty"`
-	IdleSeconds            *int           `json:"idle_seconds,omitempty"`
-	IsWrite                bool           `json:"is_write,omitempty"`
-	TokensUsed             int            `json:"tokens_used,omitempty"`
-	LinesAdded             int            `json:"lines_added,omitempty"`
-	LinesDeleted           int            `json:"lines_deleted,omitempty"`
-	CostUSD                float64        `json:"cost_usd,omitempty"`
-	Metadata               map[string]any `json:"metadata,omitempty"`
-	Machine                string         `json:"machine,omitempty"`
-	OperatingSystem        string         `json:"operating_system,omitempty"`
+	Entity           string         `json:"entity"`
+	Type             string         `json:"type,omitempty"`
+	Project          string         `json:"project,omitempty"`
+	Branch           string         `json:"branch,omitempty"`
+	Language         string         `json:"language,omitempty"`
+	AgentType        string         `json:"agent_type,omitempty"`
+	Time             float64        `json:"time"`
+	Duration         float64        `json:"duration,omitempty"`
+	SessionStartedAt *time.Time     `json:"session_started_at,omitempty"`
+	SessionEndedAt   *time.Time     `json:"session_ended_at,omitempty"`
+	SessionDurationSeconds *int     `json:"session_duration_seconds,omitempty"`
+	AgentActiveSeconds *int         `json:"agent_active_seconds,omitempty"`
+	HumanActiveSeconds *int         `json:"human_active_seconds,omitempty"`
+	IdleSeconds      *int           `json:"idle_seconds,omitempty"`
+	IsWrite          bool           `json:"is_write,omitempty"`
+	TokensUsed       int            `json:"tokens_used,omitempty"`
+	LinesAdded       int            `json:"lines_added,omitempty"`
+	LinesDeleted     int            `json:"lines_deleted,omitempty"`
+	CostUSD          float64        `json:"cost_usd,omitempty"`
+	Metadata         map[string]any `json:"metadata,omitempty"`
+	Machine          string         `json:"machine,omitempty"`
+	OperatingSystem  string         `json:"operating_system,omitempty"`
 
 	// Conversation tracking
-	ConversationID   string `json:"conversation_id,omitempty"`
-	MessageID        string `json:"message_id,omitempty"`
-	PromptTokens     int    `json:"prompt_tokens,omitempty"`
-	CompletionTokens int    `json:"completion_tokens,omitempty"`
-	TotalTokens      int    `json:"total_tokens,omitempty"`
-	Model            string `json:"model,omitempty"`
+	ConversationID   string         `json:"conversation_id,omitempty"`
+	MessageID        string         `json:"message_id,omitempty"`
+	PromptTokens     int            `json:"prompt_tokens,omitempty"`
+	CompletionTokens int            `json:"completion_tokens,omitempty"`
+	TotalTokens      int            `json:"total_tokens,omitempty"`
+	Model            string         `json:"model,omitempty"`
 }
 
 type DeviceAuthorization struct {

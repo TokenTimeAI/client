@@ -122,6 +122,8 @@ func (d *CosineDetector) Scan(ctx context.Context, state scanner.SourceState) ([
 		if err := toml.Unmarshal(mdBytes, &md); err != nil {
 			continue
 		}
+		var mdFields map[string]any
+		_ = toml.Unmarshal(mdBytes, &mdFields)
 
 		endedAt := time.Unix(entry.EndUnix, 0).UTC()
 		if !md.TimeEnded.IsZero() {
@@ -147,6 +149,7 @@ func (d *CosineDetector) Scan(ctx context.Context, state scanner.SourceState) ([
 			PromptTokens:           md.PromptTokens,
 			CompletionTokens:       md.CompletionTokens,
 			TotalTokens:            md.TotalTokens,
+			TokenUsageKnown:        hasAnyTOMLKey(mdFields, "prompt_tokens", "completion_tokens", "total_tokens"),
 			Model:                  md.Model,
 			Project:                projectNameFromPath(md.CWD),
 			LinesAdded:             md.LinesAdded,

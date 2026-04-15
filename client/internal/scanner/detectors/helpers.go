@@ -89,3 +89,12 @@ func truncateString(value string, max int) string {
 	}
 	return string(runes[:max-1]) + "…"
 }
+
+func hasAnyTOMLKey(fields map[string]any, keys ...string) bool {
+	for _, key := range keys {
+		if _, ok := fields[key]; ok {
+			return true
+		}
+	}
+	return false
+}

@@ -241,15 +241,26 @@ func runScan(ctx context.Context, paths config.Paths, args []string) int {
 	flags := flag.NewFlagSet("scan", flag.ContinueOnError)
 	flags.SetOutput(os.Stderr)
 	agentFilter := flags.String("agent", "", "scan only specific agent (e.g., 'cosine', 'cline')")
+	scanAll := flags.Bool("all", false, "ignore saved scanner state and scan all detectable conversations")
 	if err := flags.Parse(args); err != nil {
 		return 1
 	}
 
 	scannerStatePath := filepath.Join(paths.RootDir, "scanner-state.json")
+	if *scanAll {
+		scannerStatePath = filepath.Join(os.TempDir(), fmt.Sprintf("ttime-scan-all-%d.json", time.Now().UnixNano()))
+		defer os.Remove(scannerStatePath)
+	}
 	s := scanner.New(scannerStatePath, 5*time.Minute)
 
 	if *agentFilter != "" {
 		fmt.Printf("Scanning agent: %s\n", *agentFilter)
+		results, err := s.ScanAgent(ctx, *agentFilter)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "scan failed: %v\n", err)
+			return 1
+		}
+		return printScanResults(results)
 	}
 
 	results, err := s.ScanOnce(ctx)
@@ -257,37 +268,7 @@ func runScan(ctx context.Context, paths config.Paths, args []string) int {
 		fmt.Fprintf(os.Stderr, "scan failed: %v\n", err)
 		return 1
 	}
-
-	if *agentFilter != "" {
-		// Filter results by agent
-		var filtered []scanner.ScanResult
-		for _, r := range results {
-			if r.AgentType == *agentFilter {
-				filtered = append(filtered, r)
-			}
-		}
-		results = filtered
-	}
-
-	fmt.Printf("Found %d conversation events:\n\n", len(results))
-
-	for _, r := range results {
-		fmt.Printf("Agent:     %s\n", r.AgentType)
-		fmt.Printf("Project:   %s\n", r.Project)
-		fmt.Printf("Time:      %s\n", r.Timestamp.Format(time.RFC3339))
-		fmt.Printf("Tokens:    %d prompt + %d completion = %d total\n",
-			r.PromptTokens, r.CompletionTokens, r.TotalTokens)
-		if r.Model != "" {
-			fmt.Printf("Model:     %s\n", r.Model)
-		}
-		if r.CostUSD > 0 {
-			fmt.Printf("Cost:      $%.6f\n", r.CostUSD)
-		}
-		fmt.Printf("Conv ID:   %s\n", r.ConversationID)
-		fmt.Println()
-	}
-
-	return 0
+	return printScanResults(results)
 }
 
 func runUpdate(ctx context.Context, paths config.Paths, args []string) int {
@@ -364,4 +345,30 @@ Usage:
   ttime install
   ttime uninstall
 `)
+}
+
+func printScanResults(results []scanner.ScanResult) int {
+	fmt.Printf("Found %d conversation events:\n\n", len(results))
+
+	for _, r := range results {
+		fmt.Printf("Agent:     %s\n", r.AgentType)
+		fmt.Printf("Project:   %s\n", r.Project)
+		fmt.Printf("Time:      %s\n", r.Timestamp.Format(time.RFC3339))
+		if !r.TokenUsageKnown && r.PromptTokens == 0 && r.CompletionTokens == 0 && r.TotalTokens == 0 {
+			fmt.Printf("Tokens:    unknown\n")
+		} else {
+			fmt.Printf("Tokens:    %d prompt + %d completion = %d total\n",
+				r.PromptTokens, r.CompletionTokens, r.TotalTokens)
+		}
+		if r.Model != "" {
+			fmt.Printf("Model:     %s\n", r.Model)
+		}
+		if r.CostUSD > 0 {
+			fmt.Printf("Cost:      $%.6f\n", r.CostUSD)
+		}
+		fmt.Printf("Conv ID:   %s\n", r.ConversationID)
+		fmt.Println()
+	}
+
+	return 0
 }
