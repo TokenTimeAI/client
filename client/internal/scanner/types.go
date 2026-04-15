@@ -29,9 +29,9 @@ type ScanResult struct {
 	ParentMessageID string `json:"parent_message_id,omitempty"`
 
 	// Token usage (what we really care about)
-	PromptTokens     int `json:"prompt_tokens,omitempty"`
-	CompletionTokens int `json:"completion_tokens,omitempty"`
-	TotalTokens      int `json:"total_tokens,omitempty"`
+	PromptTokens     int  `json:"prompt_tokens,omitempty"`
+	CompletionTokens int  `json:"completion_tokens,omitempty"`
+	TotalTokens      int  `json:"total_tokens,omitempty"`
 	TokenUsageKnown  bool `json:"token_usage_known,omitempty"`
 
 	// Cost tracking
