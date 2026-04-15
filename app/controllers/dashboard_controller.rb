@@ -130,23 +130,17 @@ class DashboardController < ApplicationController
   end
 
   def language_breakdown
-    scope = current_user.heartbeat_events.for_period(@start_date, @end_date)
-    scope = scope.where(project_id: @selected_project) if @selected_project.present?
-    scope = scope.where(agent_type: @selected_agent) if @selected_agent.present?
-    scope.group(:language)
-         .count
-         .reject { |k, _| k.blank? }
-         .sort_by { |_, v| -v }
-         .first(8)
+    filtered_events.group(:language)
+                   .count
+                   .reject { |k, _| k.blank? }
+                   .sort_by { |_, v| -v }
+                   .first(8)
   end
 
   def agent_breakdown
-    scope = current_user.heartbeat_events.for_period(@start_date, @end_date)
-    scope = scope.where(project_id: @selected_project) if @selected_project.present?
-    scope = scope.where(language: @selected_language) if @selected_language.present?
-    scope.group(:agent_type)
-         .count
-         .sort_by { |_, v| -v }
+    filtered_events.group(:agent_type)
+                   .count
+                   .sort_by { |_, v| -v }
   end
 
   def build_daily_activity
@@ -155,12 +149,10 @@ class DashboardController < ApplicationController
 
     (days - 1).downto(0).map do |offset|
       date = @end_date.to_date - offset.days
-      start_ts = date.beginning_of_day.to_time.to_f
-      end_ts = date.end_of_day.to_time.to_f
-      events = current_user.heartbeat_events
-                            .where("time >= ? AND time <= ?", start_ts, end_ts)
-                            .order(time: :asc)
-                            .to_a
+      events = filtered_events
+                 .for_period(date.beginning_of_day, date.end_of_day)
+                 .order(time: :asc)
+                 .to_a
       {
         date: date.iso8601,
         label: date.strftime(days > 7 ? "%b %d" : "%a"),
@@ -176,12 +168,9 @@ class DashboardController < ApplicationController
 
     (days - 1).downto(0).map do |offset|
       date = @end_date.to_date - offset.days
-      start_ts = date.beginning_of_day
-      end_ts = date.end_of_day
-      events = current_user.heartbeat_events
-                           .for_period(start_ts, end_ts)
-                           .with_session_timing
-                           .to_a
+      events = filtered_session_events
+                 .for_period(date.beginning_of_day, date.end_of_day)
+                 .to_a
 
       {
         date: date.iso8601,
@@ -211,12 +200,7 @@ class DashboardController < ApplicationController
 
     (days - 1).downto(0).map do |offset|
       date = @end_date.to_date - offset.days
-      start_ts = date.beginning_of_day
-      end_ts = date.end_of_day
-      scope = current_user.heartbeat_events.for_period(start_ts, end_ts)
-      scope = scope.where(project_id: @selected_project) if @selected_project.present?
-      scope = scope.where(agent_type: @selected_agent) if @selected_agent.present?
-      scope = scope.where(language: @selected_language) if @selected_language.present?
+      scope = filtered_events.for_period(date.beginning_of_day, date.end_of_day)
 
       {
         date: date.strftime(days > 7 ? "%b %d" : "%a"),
