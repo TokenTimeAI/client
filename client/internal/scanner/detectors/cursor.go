@@ -48,16 +48,16 @@ func (d *CursorDetector) Detect(ctx context.Context) (bool, error) {
 
 type cursorComposerHeaders struct {
 	AllComposers []struct {
-		ComposerID      string         `json:"composerId"`
-		Name            string         `json:"name"`
-		Subtitle        string         `json:"subtitle"`
-		CreatedAt       int64          `json:"createdAt"`
-		LastUpdatedAt   int64          `json:"lastUpdatedAt"`
-		CheckpointAt    int64          `json:"conversationCheckpointLastUpdatedAt"`
-		UnifiedMode     string         `json:"unifiedMode"`
-		ForceMode       string         `json:"forceMode"`
-		TotalLinesAdded int            `json:"totalLinesAdded"`
-		TotalLinesRemoved int          `json:"totalLinesRemoved"`
+		ComposerID          string         `json:"composerId"`
+		Name                string         `json:"name"`
+		Subtitle            string         `json:"subtitle"`
+		CreatedAt           int64          `json:"createdAt"`
+		LastUpdatedAt       int64          `json:"lastUpdatedAt"`
+		CheckpointAt        int64          `json:"conversationCheckpointLastUpdatedAt"`
+		UnifiedMode         string         `json:"unifiedMode"`
+		ForceMode           string         `json:"forceMode"`
+		TotalLinesAdded     int            `json:"totalLinesAdded"`
+		TotalLinesRemoved   int            `json:"totalLinesRemoved"`
 		WorkspaceIdentifier map[string]any `json:"workspaceIdentifier"`
 	} `json:"allComposers"`
 }

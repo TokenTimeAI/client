@@ -52,21 +52,21 @@ type cosineIndex struct {
 }
 
 type cosineMetadata struct {
-	SessionID         string    `toml:"session_id"`
-	Title             string    `toml:"title"`
-	CWD               string    `toml:"cwd"`
-	TimeStarted       time.Time `toml:"time_started"`
-	TimeEnded         time.Time `toml:"time_ended"`
-	DurationSeconds   int       `toml:"duration_seconds"`
-	LinesAdded        int       `toml:"lines_added"`
-	LinesRemoved      int       `toml:"lines_removed"`
-	Model             string    `toml:"model"`
-	AgentActiveSeconds int      `toml:"agent_active_seconds"`
-	HumanActiveSeconds int      `toml:"human_active_seconds"`
-	IdleSeconds       int       `toml:"idle_seconds"`
-	PromptTokens      int       `toml:"prompt_tokens"`
-	CompletionTokens  int       `toml:"completion_tokens"`
-	TotalTokens       int       `toml:"total_tokens"`
+	SessionID          string    `toml:"session_id"`
+	Title              string    `toml:"title"`
+	CWD                string    `toml:"cwd"`
+	TimeStarted        time.Time `toml:"time_started"`
+	TimeEnded          time.Time `toml:"time_ended"`
+	DurationSeconds    int       `toml:"duration_seconds"`
+	LinesAdded         int       `toml:"lines_added"`
+	LinesRemoved       int       `toml:"lines_removed"`
+	Model              string    `toml:"model"`
+	AgentActiveSeconds int       `toml:"agent_active_seconds"`
+	HumanActiveSeconds int       `toml:"human_active_seconds"`
+	IdleSeconds        int       `toml:"idle_seconds"`
+	PromptTokens       int       `toml:"prompt_tokens"`
+	CompletionTokens   int       `toml:"completion_tokens"`
+	TotalTokens        int       `toml:"total_tokens"`
 }
 
 func (d *CosineDetector) Scan(ctx context.Context, state scanner.SourceState) ([]scanner.ScanResult, scanner.SourceState, error) {

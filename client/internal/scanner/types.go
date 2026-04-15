@@ -9,24 +9,24 @@ import (
 type ScanResult struct {
 	// Core identity
 	AgentType string `json:"agent_type"`
-	Entity    string `json:"entity"`     // e.g., conversation ID or project path
-	Type      string `json:"type"`       // "conversation", "file", "command", etc.
+	Entity    string `json:"entity"` // e.g., conversation ID or project path
+	Type      string `json:"type"`   // "conversation", "file", "command", etc.
 
 	// Timing
-	Time      float64   `json:"time"`       // Unix timestamp
-	Duration  float64   `json:"duration"`   // Duration in seconds
-	Timestamp time.Time `json:"timestamp"`  // Parsed time
-	SessionStartedAt      *time.Time `json:"session_started_at,omitempty"`
-	SessionEndedAt        *time.Time `json:"session_ended_at,omitempty"`
-	SessionDurationSeconds *int      `json:"session_duration_seconds,omitempty"`
-	AgentActiveSeconds    *int       `json:"agent_active_seconds,omitempty"`
-	HumanActiveSeconds    *int       `json:"human_active_seconds,omitempty"`
-	IdleSeconds           *int       `json:"idle_seconds,omitempty"`
+	Time                   float64    `json:"time"`      // Unix timestamp
+	Duration               float64    `json:"duration"`  // Duration in seconds
+	Timestamp              time.Time  `json:"timestamp"` // Parsed time
+	SessionStartedAt       *time.Time `json:"session_started_at,omitempty"`
+	SessionEndedAt         *time.Time `json:"session_ended_at,omitempty"`
+	SessionDurationSeconds *int       `json:"session_duration_seconds,omitempty"`
+	AgentActiveSeconds     *int       `json:"agent_active_seconds,omitempty"`
+	HumanActiveSeconds     *int       `json:"human_active_seconds,omitempty"`
+	IdleSeconds            *int       `json:"idle_seconds,omitempty"`
 
 	// Conversation metadata
-	ConversationID   string `json:"conversation_id,omitempty"`
-	MessageID        string `json:"message_id,omitempty"`
-	ParentMessageID  string `json:"parent_message_id,omitempty"`
+	ConversationID  string `json:"conversation_id,omitempty"`
+	MessageID       string `json:"message_id,omitempty"`
+	ParentMessageID string `json:"parent_message_id,omitempty"`
 
 	// Token usage (what we really care about)
 	PromptTokens     int `json:"prompt_tokens,omitempty"`
@@ -37,9 +37,9 @@ type ScanResult struct {
 	CostUSD float64 `json:"cost_usd,omitempty"`
 
 	// Content metrics
-	LinesAdded   int    `json:"lines_added,omitempty"`
-	LinesDeleted int    `json:"lines_deleted,omitempty"`
-	IsWrite      bool   `json:"is_write,omitempty"`
+	LinesAdded   int  `json:"lines_added,omitempty"`
+	LinesDeleted int  `json:"lines_deleted,omitempty"`
+	IsWrite      bool `json:"is_write,omitempty"`
 
 	// Model information
 	Model   string `json:"model,omitempty"`
@@ -61,11 +61,11 @@ type State struct {
 
 // SourceState tracks the last scan position for a single source
 type SourceState struct {
-	LastScanTime   int64  `json:"last_scan_time"`   // Unix timestamp of last successful scan
-	LastRecordID   string `json:"last_record_id"`   // Last processed record ID
-	LastOffset     int64  `json:"last_offset"`      // For file-based sources
-	RowID          int64  `json:"row_id"`           // For SQLite sources
-	Checksum       string `json:"checksum"`         // For change detection
+	LastScanTime int64  `json:"last_scan_time"` // Unix timestamp of last successful scan
+	LastRecordID string `json:"last_record_id"` // Last processed record ID
+	LastOffset   int64  `json:"last_offset"`    // For file-based sources
+	RowID        int64  `json:"row_id"`         // For SQLite sources
+	Checksum     string `json:"checksum"`       // For change detection
 }
 
 // NewState creates an empty state
@@ -132,11 +132,11 @@ func NewBaseDetector(name, description string, paths []string, priority int) Bas
 	}
 }
 
-func (b *BaseDetector) Name() string        { return b.name }
-func (b *BaseDetector) Description() string { return b.description }
-func (b *BaseDetector) DefaultPaths() []string { return b.paths }
-func (b *BaseDetector) Priority() int       { return b.priority }
-func (b *BaseDetector) FoundPath() string   { return b.foundPath }
+func (b *BaseDetector) Name() string             { return b.name }
+func (b *BaseDetector) Description() string      { return b.description }
+func (b *BaseDetector) DefaultPaths() []string   { return b.paths }
+func (b *BaseDetector) Priority() int            { return b.priority }
+func (b *BaseDetector) FoundPath() string        { return b.foundPath }
 func (b *BaseDetector) SetFoundPath(path string) { b.foundPath = path }
 
 // DetectorInfo provides metadata about a registered detector
