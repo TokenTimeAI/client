@@ -1,49 +1,92 @@
 class DashboardController < ApplicationController
+  before_action :set_date_range
+  before_action :set_filters
+
   def index
-    session_events_today = today_session_events.to_a
+    session_events = filtered_session_events.to_a
+    all_events = filtered_events.to_a
 
     @stats = {
-      total_events_today: today_events.count,
-      coding_time_today: calculate_coding_time(today_events.order(time: :asc).to_a),
-      session_time_today: sum_timing(session_events_today, :session_duration_seconds),
-      agent_time_today: sum_timing(session_events_today, :agent_active_seconds),
-      human_time_today: sum_timing(session_events_today, :human_active_seconds),
-      active_projects: current_user.projects.count,
-      total_tokens: today_events.sum(:tokens_used).to_i
+      total_events: filtered_events.count,
+      coding_time: calculate_coding_time(all_events.sort_by(&:time)),
+      session_time: sum_timing(session_events, :session_duration_seconds),
+      agent_time: sum_timing(session_events, :agent_active_seconds),
+      human_time: sum_timing(session_events, :human_active_seconds),
+      active_projects: filtered_events.distinct.count(:project_id),
+      total_tokens: filtered_events.sum(:tokens_used).to_i,
+      avg_session_length: calculate_avg_session_length(session_events),
+      productivity_ratio: calculate_productivity_ratio(session_events)
     }
 
-    @recent_heartbeats = current_user.heartbeat_events
-                                      .order(time: :desc)
-                                      .limit(20)
-                                      .includes(:project)
+    @top_project = top_project
+    @peak_hour = peak_coding_hour(all_events)
 
-    @language_breakdown = current_user.heartbeat_events
-                                       .for_period(7.days.ago, Time.now)
-                                       .group(:language)
-                                       .count
-                                       .reject { |k, _| k.blank? }
-                                       .sort_by { |_, v| -v }
-                                       .first(8)
+    @recent_heartbeats = filtered_events
+                          .order(time: :desc)
+                          .limit(50)
+                          .includes(:project)
 
-    @agent_breakdown = current_user.heartbeat_events
-                                    .for_period(7.days.ago, Time.now)
-                                    .group(:agent_type)
-                                    .count
-                                    .sort_by { |_, v| -v }
-
+    @language_breakdown = language_breakdown
+    @agent_breakdown = agent_breakdown
     @daily_activity = build_daily_activity
     @daily_session_timing = build_daily_session_timing
+    @hourly_activity = build_hourly_activity(all_events)
+    @tokens_by_day = build_tokens_by_day
+
+    @available_projects = current_user.projects.order(:name).pluck(:name, :id)
+    @available_languages = current_user.heartbeat_events.where.not(language: nil).distinct.pluck(:language).sort
   end
 
   private
 
-  def today_events
-    @today_events ||= current_user.heartbeat_events
-                                   .for_period(Time.zone.now.beginning_of_day, Time.zone.now.end_of_day)
+  def set_date_range
+    @date_range = params[:date_range] || "today"
+    @start_date, @end_date = parse_date_range(@date_range)
   end
 
-  def today_session_events
-    @today_session_events ||= today_events.with_session_timing
+  def set_filters
+    @selected_project = params[:project_id].presence
+    @selected_agent = params[:agent_type].presence
+    @selected_language = params[:language].presence
+  end
+
+  def parse_date_range(range)
+    case range
+    when "today"
+      [Time.zone.now.beginning_of_day, Time.zone.now.end_of_day]
+    when "yesterday"
+      [1.day.ago.beginning_of_day, 1.day.ago.end_of_day]
+    when "last_7_days"
+      [6.days.ago.beginning_of_day, Time.zone.now.end_of_day]
+    when "last_30_days"
+      [29.days.ago.beginning_of_day, Time.zone.now.end_of_day]
+    when "custom"
+      [
+        parse_custom_date(params[:start_date])&.beginning_of_day || Time.zone.now.beginning_of_day,
+        parse_custom_date(params[:end_date])&.end_of_day || Time.zone.now.end_of_day
+      ]
+    else
+      [Time.zone.now.beginning_of_day, Time.zone.now.end_of_day]
+    end
+  end
+
+  def parse_custom_date(date_string)
+    return nil if date_string.blank?
+    Date.parse(date_string)
+  rescue ArgumentError
+    nil
+  end
+
+  def filtered_events
+    scope = current_user.heartbeat_events.for_period(@start_date, @end_date)
+    scope = scope.where(project_id: @selected_project) if @selected_project.present?
+    scope = scope.where(agent_type: @selected_agent) if @selected_agent.present?
+    scope = scope.where(language: @selected_language) if @selected_language.present?
+    scope
+  end
+
+  def filtered_session_events
+    filtered_events.with_session_timing
   end
 
   def calculate_coding_time(events)
@@ -57,8 +100,61 @@ class DashboardController < ApplicationController
     total.to_i
   end
 
+  def calculate_avg_session_length(events)
+    return 0 if events.empty?
+    total = events.sum { |e| e.session_duration_seconds.to_i }
+    (total / events.count.to_f).round
+  end
+
+  def calculate_productivity_ratio(events)
+    return 0 if events.empty?
+    agent_time = events.sum { |e| e.agent_active_seconds.to_i }
+    human_time = events.sum { |e| e.human_active_seconds.to_i }
+    total = agent_time + human_time
+    return 0 if total == 0
+    ((agent_time.to_f / total) * 100).round
+  end
+
+  def top_project
+    filtered_events
+      .where.not(project_id: nil)
+      .group(:project_id)
+      .count
+      .max_by { |_, count| count }
+      &.then { |project_id, count| [current_user.projects.find_by(id: project_id)&.name, count] }
+  end
+
+  def peak_coding_hour(events)
+    return nil if events.empty?
+    events.group_by { |e| Time.at(e.time).hour }.max_by { |_, evts| evts.count }&.first
+  end
+
+  def language_breakdown
+    scope = current_user.heartbeat_events.for_period(@start_date, @end_date)
+    scope = scope.where(project_id: @selected_project) if @selected_project.present?
+    scope = scope.where(agent_type: @selected_agent) if @selected_agent.present?
+    scope.group(:language)
+         .count
+         .reject { |k, _| k.blank? }
+         .sort_by { |_, v| -v }
+         .first(8)
+  end
+
+  def agent_breakdown
+    scope = current_user.heartbeat_events.for_period(@start_date, @end_date)
+    scope = scope.where(project_id: @selected_project) if @selected_project.present?
+    scope = scope.where(language: @selected_language) if @selected_language.present?
+    scope.group(:agent_type)
+         .count
+         .sort_by { |_, v| -v }
+  end
+
   def build_daily_activity
-    (6.days.ago.to_date..Date.today).map do |date|
+    days = (@end_date.to_date - @start_date.to_date).to_i + 1
+    days = [days, 30].min
+
+    (days - 1).downto(0).map do |offset|
+      date = @end_date.to_date - offset.days
       start_ts = date.beginning_of_day.to_time.to_f
       end_ts = date.end_of_day.to_time.to_f
       events = current_user.heartbeat_events
@@ -67,7 +163,7 @@ class DashboardController < ApplicationController
                             .to_a
       {
         date: date.iso8601,
-        label: date.strftime("%a"),
+        label: date.strftime(days > 7 ? "%b %d" : "%a"),
         seconds: calculate_coding_time(events),
         events: events.count
       }
@@ -75,7 +171,11 @@ class DashboardController < ApplicationController
   end
 
   def build_daily_session_timing
-    (6.days.ago.to_date..Date.today).map do |date|
+    days = (@end_date.to_date - @start_date.to_date).to_i + 1
+    days = [days, 30].min
+
+    (days - 1).downto(0).map do |offset|
+      date = @end_date.to_date - offset.days
       start_ts = date.beginning_of_day
       end_ts = date.end_of_day
       events = current_user.heartbeat_events
@@ -85,10 +185,42 @@ class DashboardController < ApplicationController
 
       {
         date: date.iso8601,
-        label: date.strftime("%a"),
+        label: date.strftime(days > 7 ? "%b %d" : "%a"),
         session_seconds: sum_timing(events, :session_duration_seconds),
         agent_seconds: sum_timing(events, :agent_active_seconds),
         human_seconds: sum_timing(events, :human_active_seconds)
+      }
+    end
+  end
+
+  def build_hourly_activity(events)
+    return [] if events.empty?
+    hours = Array.new(24, 0)
+    events.each do |event|
+      hour = Time.at(event.time).hour
+      hours[hour] += 1
+    end
+    hours.map.with_index do |count, hour|
+      { hour: format("%02d:00", hour), count: count }
+    end
+  end
+
+  def build_tokens_by_day
+    days = (@end_date.to_date - @start_date.to_date).to_i + 1
+    days = [days, 30].min
+
+    (days - 1).downto(0).map do |offset|
+      date = @end_date.to_date - offset.days
+      start_ts = date.beginning_of_day
+      end_ts = date.end_of_day
+      scope = current_user.heartbeat_events.for_period(start_ts, end_ts)
+      scope = scope.where(project_id: @selected_project) if @selected_project.present?
+      scope = scope.where(agent_type: @selected_agent) if @selected_agent.present?
+      scope = scope.where(language: @selected_language) if @selected_language.present?
+
+      {
+        date: date.strftime(days > 7 ? "%b %d" : "%a"),
+        tokens: scope.sum(:tokens_used).to_i
       }
     end
   end
