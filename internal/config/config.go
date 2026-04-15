@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultServerURL          = "http://localhost:3000"
+	defaultServerURL          = "https://ttime.ai"
 	defaultPollIntervalSecond = 10
 )
 
