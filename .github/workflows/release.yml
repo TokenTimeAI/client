@@ -44,6 +44,10 @@ jobs:
       - name: Create version tag (manual dispatch)
         if: github.event_name == 'workflow_dispatch'
         run: |
+          if git rev-parse "${{ github.event.inputs.version }}" >/dev/null 2>&1; then
+            echo "Tag ${{ github.event.inputs.version }} already exists; continuing with release"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag ${{ github.event.inputs.version }}
