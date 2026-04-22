@@ -109,6 +109,8 @@ ttime status
 | `ttime scan` | Manually scan agent databases |
 | `ttime scan --agent <name>` | Scan only specific agent |
 | `ttime scan --all` | Scan all conversations (ignore state) |
+| `ttime import replay --all` | Replay all native-agent session imports with upsert protection |
+| `ttime import replay --agent <name>` | Replay one agent's native session imports |
 | `ttime install` | Install as system service |
 | `ttime uninstall` | Remove system service |
 | `ttime update` | Check for and install updates |

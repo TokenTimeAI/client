@@ -61,6 +61,78 @@ func TestSendHeartbeatsFormatsBulkRequest(t *testing.T) {
 	}
 }
 
+func TestSendHeartbeatsDetailedParsesCreatedVsUpdated(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"responses":[[201,{}],[200,{}]]}`))
+	}))
+	defer server.Close()
+
+	client := api.NewClient(server.URL, "tt_test")
+	result, err := client.SendHeartbeatsDetailed(context.Background(), []api.Heartbeat{
+		{Entity: "a", Type: "conversation", AgentType: "codex", Time: 1},
+		{Entity: "b", Type: "conversation", AgentType: "codex", Time: 2},
+	})
+	if err != nil {
+		t.Fatalf("send heartbeats detailed: %v", err)
+	}
+	if len(result.Responses) != 2 || result.Responses[0].StatusCode != 201 || result.Responses[1].StatusCode != 200 {
+		t.Fatalf("unexpected result: %#v", result)
+	}
+}
+
+func TestCreateAndUpdateImportRun(t *testing.T) {
+	t.Parallel()
+
+	var methodCalls []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		methodCalls = append(methodCalls, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/api/v1/import_runs":
+			_, _ = w.Write([]byte(`{"data":{"id":"run-1","machine":"workstation","trigger_kind":"replay","status":"running","started_at":"2026-04-22T10:00:00Z","agent_filters":["codex"],"replay_all":false}}`))
+		case r.Method == http.MethodPatch && r.URL.Path == "/api/v1/import_runs/run-1":
+			_, _ = w.Write([]byte(`{"data":{"id":"run-1","machine":"workstation","trigger_kind":"replay","status":"completed","started_at":"2026-04-22T10:00:00Z","completed_at":"2026-04-22T10:05:00Z","sessions_seen":4,"sessions_imported":3,"sessions_updated":1,"sessions_skipped":0}}`))
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client := api.NewClient(server.URL, "tt_test")
+	run, err := client.CreateImportRun(context.Background(), api.ImportRun{
+		Machine:      "workstation",
+		TriggerKind:  "replay",
+		Status:       "running",
+		AgentFilters: []string{"codex"},
+	})
+	if err != nil {
+		t.Fatalf("create import run: %v", err)
+	}
+	if run.ID != "run-1" || run.Status != "running" {
+		t.Fatalf("unexpected created run: %#v", run)
+	}
+
+	run, err = client.UpdateImportRun(context.Background(), api.ImportRun{
+		ID:               "run-1",
+		Status:           "completed",
+		SessionsSeen:     4,
+		SessionsImported: 3,
+		SessionsUpdated:  1,
+	})
+	if err != nil {
+		t.Fatalf("update import run: %v", err)
+	}
+	if run.Status != "completed" || run.SessionsImported != 3 {
+		t.Fatalf("unexpected updated run: %#v", run)
+	}
+	if len(methodCalls) != 2 {
+		t.Fatalf("expected two API calls, got %#v", methodCalls)
+	}
+}
+
 func TestCreateDeviceAuthorizationParsesEnvelope(t *testing.T) {
 	t.Parallel()
 

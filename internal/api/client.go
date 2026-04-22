@@ -51,6 +51,40 @@ type Heartbeat struct {
 	CompletionTokens int    `json:"completion_tokens,omitempty"`
 	TotalTokens      int    `json:"total_tokens,omitempty"`
 	Model            string `json:"model,omitempty"`
+	ImportRunID      string `json:"import_run_id,omitempty"`
+	SourceFingerprint string `json:"source_fingerprint,omitempty"`
+	FileEdits        []FileEdit `json:"file_edits,omitempty"`
+}
+
+type FileEdit struct {
+	Path         string `json:"path"`
+	EditCount    int    `json:"edit_count,omitempty"`
+	LinesAdded   int    `json:"lines_added,omitempty"`
+	LinesDeleted int    `json:"lines_deleted,omitempty"`
+}
+
+type BulkSendResult struct {
+	Responses []BulkResponse
+}
+
+type BulkResponse struct {
+	StatusCode int
+}
+
+type ImportRun struct {
+	ID               string
+	Machine          string
+	TriggerKind      string
+	Status           string
+	AgentFilters     []string
+	ReplayAll        bool
+	SessionsSeen     int
+	SessionsImported int
+	SessionsUpdated  int
+	SessionsSkipped  int
+	StartedAt        time.Time
+	CompletedAt      *time.Time
+	ErrorSummary     string
 }
 
 type DeviceAuthorization struct {
@@ -92,30 +126,127 @@ func NewClient(baseURL, apiKey string) *Client {
 }
 
 func (c *Client) SendHeartbeats(ctx context.Context, heartbeats []Heartbeat) error {
+	_, err := c.SendHeartbeatsDetailed(ctx, heartbeats)
+	return err
+}
+
+func (c *Client) SendHeartbeatsDetailed(ctx context.Context, heartbeats []Heartbeat) (BulkSendResult, error) {
 	if len(heartbeats) == 0 {
-		return nil
+		return BulkSendResult{}, nil
 	}
 
 	payload, err := json.Marshal(heartbeats)
 	if err != nil {
-		return err
+		return BulkSendResult{}, err
 	}
 
 	req, err := c.newRequest(ctx, http.MethodPost, "/api/v1/heartbeats/bulk", bytes.NewReader(payload))
 	if err != nil {
-		return err
+		return BulkSendResult{}, err
 	}
 
 	res, err := c.do(req)
 	if err != nil {
-		return err
+		return BulkSendResult{}, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return responseError(res)
+		return BulkSendResult{}, responseError(res)
 	}
-	return nil
+
+	var body struct {
+		Responses [][]any `json:"responses"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		return BulkSendResult{}, err
+	}
+
+	result := BulkSendResult{Responses: make([]BulkResponse, 0, len(body.Responses))}
+	for _, response := range body.Responses {
+		if len(response) == 0 {
+			continue
+		}
+		switch code := response[0].(type) {
+		case float64:
+			result.Responses = append(result.Responses, BulkResponse{StatusCode: int(code)})
+		case int:
+			result.Responses = append(result.Responses, BulkResponse{StatusCode: code})
+		}
+	}
+	return result, nil
+}
+
+func (c *Client) CreateImportRun(ctx context.Context, run ImportRun) (ImportRun, error) {
+	payload, err := json.Marshal(map[string]any{
+		"import_run": map[string]any{
+			"machine": run.Machine,
+			"trigger_kind": run.TriggerKind,
+			"status": run.Status,
+			"agent_filters": run.AgentFilters,
+			"replay_all": run.ReplayAll,
+			"started_at": run.StartedAt.Format(time.RFC3339),
+			"sessions_seen": run.SessionsSeen,
+			"sessions_imported": run.SessionsImported,
+			"sessions_updated": run.SessionsUpdated,
+			"sessions_skipped": run.SessionsSkipped,
+		},
+	})
+	if err != nil {
+		return ImportRun{}, err
+	}
+
+	req, err := c.newRequest(ctx, http.MethodPost, "/api/v1/import_runs", bytes.NewReader(payload))
+	if err != nil {
+		return ImportRun{}, err
+	}
+	res, err := c.do(req)
+	if err != nil {
+		return ImportRun{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return ImportRun{}, responseError(res)
+	}
+	body, err := decodeEnvelopeObject(res.Body)
+	if err != nil {
+		return ImportRun{}, err
+	}
+	return decodeImportRun(body), nil
+}
+
+func (c *Client) UpdateImportRun(ctx context.Context, run ImportRun) (ImportRun, error) {
+	payload, err := json.Marshal(map[string]any{
+		"import_run": map[string]any{
+			"status": run.Status,
+			"completed_at": formatTimePtrValue(run.CompletedAt),
+			"error_summary": run.ErrorSummary,
+			"sessions_seen": run.SessionsSeen,
+			"sessions_imported": run.SessionsImported,
+			"sessions_updated": run.SessionsUpdated,
+			"sessions_skipped": run.SessionsSkipped,
+		},
+	})
+	if err != nil {
+		return ImportRun{}, err
+	}
+	req, err := c.newRequest(ctx, http.MethodPatch, "/api/v1/import_runs/"+run.ID, bytes.NewReader(payload))
+	if err != nil {
+		return ImportRun{}, err
+	}
+	res, err := c.do(req)
+	if err != nil {
+		return ImportRun{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return ImportRun{}, responseError(res)
+	}
+	body, err := decodeEnvelopeObject(res.Body)
+	if err != nil {
+		return ImportRun{}, err
+	}
+	return decodeImportRun(body), nil
 }
 
 func (c *Client) CurrentUser(ctx context.Context) (CurrentUser, error) {
@@ -344,6 +475,31 @@ func decodeEnvelopeObject(r io.Reader) (map[string]any, error) {
 	return body, nil
 }
 
+func decodeImportRun(body map[string]any) ImportRun {
+	var completedAt *time.Time
+	if raw := getString(body, "completed_at"); raw != "" {
+		if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
+			completedAt = &parsed
+		}
+	}
+	startedAt, _ := time.Parse(time.RFC3339, getString(body, "started_at"))
+	return ImportRun{
+		ID:               getString(body, "id"),
+		Machine:          getString(body, "machine"),
+		TriggerKind:      getString(body, "trigger_kind"),
+		Status:           getString(body, "status"),
+		AgentFilters:     getStringSlice(body["agent_filters"]),
+		ReplayAll:        getBool(body["replay_all"]),
+		SessionsSeen:     getInt(body, "sessions_seen"),
+		SessionsImported: getInt(body, "sessions_imported"),
+		SessionsUpdated:  getInt(body, "sessions_updated"),
+		SessionsSkipped:  getInt(body, "sessions_skipped"),
+		StartedAt:        startedAt,
+		CompletedAt:      completedAt,
+		ErrorSummary:     getString(body, "error_summary"),
+	}
+}
+
 func responseError(res *http.Response) error {
 	body, _ := io.ReadAll(io.LimitReader(res.Body, 4*1024))
 	message := strings.TrimSpace(string(body))
@@ -404,4 +560,37 @@ func getInt(body map[string]any, keys ...string) int {
 		}
 	}
 	return 0
+}
+
+func getStringSlice(value any) []string {
+	items, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		switch typed := item.(type) {
+		case string:
+			out = append(out, typed)
+		}
+	}
+	return out
+}
+
+func getBool(value any) bool {
+	switch typed := value.(type) {
+	case bool:
+		return typed
+	case string:
+		return typed == "true"
+	default:
+		return false
+	}
+}
+
+func formatTimePtrValue(value *time.Time) string {
+	if value == nil {
+		return ""
+	}
+	return value.UTC().Format(time.RFC3339)
 }

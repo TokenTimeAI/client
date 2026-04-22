@@ -61,5 +61,24 @@ func Event(raw collector.Event, opts Options) api.Heartbeat {
 		CompletionTokens:       raw.CompletionTokens,
 		TotalTokens:            raw.TotalTokens,
 		Model:                  raw.Model,
+		ImportRunID:            raw.ImportRunID,
+		SourceFingerprint:      raw.SourceFingerprint,
+		FileEdits:              normalizeFileEdits(raw.FileEdits),
 	}
+}
+
+func normalizeFileEdits(raw []collector.FileEdit) []api.FileEdit {
+	if len(raw) == 0 {
+		return nil
+	}
+	edits := make([]api.FileEdit, 0, len(raw))
+	for _, edit := range raw {
+		edits = append(edits, api.FileEdit{
+			Path:         edit.Path,
+			EditCount:    edit.EditCount,
+			LinesAdded:   edit.LinesAdded,
+			LinesDeleted: edit.LinesDeleted,
+		})
+	}
+	return edits
 }

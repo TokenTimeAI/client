@@ -28,6 +28,7 @@ type Paths struct {
 	ConfigFile         string
 	QueueFile          string
 	CollectorStateFile string
+	ScannerStateFile   string
 }
 
 func DefaultPaths() (Paths, error) {
@@ -42,6 +43,7 @@ func DefaultPaths() (Paths, error) {
 		ConfigFile:         filepath.Join(root, "config.json"),
 		QueueFile:          filepath.Join(root, "queue.jsonl"),
 		CollectorStateFile: filepath.Join(root, "collector-state.json"),
+		ScannerStateFile:   filepath.Join(root, "scanner-state.json"),
 	}, nil
 }
 

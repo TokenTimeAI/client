@@ -52,6 +52,7 @@ type claudeSessionSummary struct {
 	PromptTokens     int
 	CompletionTokens int
 	TotalTokens      int
+	FileEdits        map[string]scanner.FileEdit
 }
 
 type claudeRoleEvent struct {
@@ -143,6 +144,7 @@ func (d *ClaudeDetector) Scan(ctx context.Context, state scanner.SourceState) ([
 			CompletionTokens:       summary.CompletionTokens,
 			TotalTokens:            summary.TotalTokens,
 			Model:                  summary.Model,
+			FileEdits:              flattenFileEdits(summary.FileEdits),
 			Project:                projectNameFromPath(summary.CWD),
 			Metadata: map[string]any{
 				"title": summary.Title,
@@ -164,6 +166,7 @@ func summarizeClaudeSession(path string) (claudeSessionSummary, bool) {
 	defer file.Close()
 
 	var summary claudeSessionSummary
+	summary.FileEdits = make(map[string]scanner.FileEdit)
 	roleEvents := make([]claudeRoleEvent, 0, 32)
 	lineScanner := bufio.NewScanner(file)
 
@@ -200,6 +203,7 @@ func summarizeClaudeSession(path string) (claudeSessionSummary, bool) {
 			}
 		case "assistant":
 			if message, ok := record["message"].(map[string]any); ok {
+				recordClaudeToolUseFileEdits(summary.FileEdits, message)
 				if model := strings.TrimSpace(stringValue(message["model"])); model != "" {
 					summary.Model = model
 				}
@@ -259,6 +263,35 @@ func extractClaudeText(raw any) string {
 		return strings.Join(parts, "\n")
 	default:
 		return ""
+	}
+}
+
+func recordClaudeToolUseFileEdits(target map[string]scanner.FileEdit, message map[string]any) {
+	content, ok := message["content"].([]any)
+	if !ok {
+		return
+	}
+	for _, item := range content {
+		entry, ok := item.(map[string]any)
+		if !ok || strings.TrimSpace(stringValue(entry["type"])) != "tool_use" {
+			continue
+		}
+		name := strings.TrimSpace(stringValue(entry["name"]))
+		if name != "Edit" && name != "MultiEdit" && name != "Write" && name != "NotebookEdit" {
+			continue
+		}
+		input, _ := entry["input"].(map[string]any)
+		path := strings.TrimSpace(stringValue(input["file_path"]))
+		if path == "" {
+			path = strings.TrimSpace(stringValue(input["notebook_path"]))
+		}
+		if path == "" {
+			continue
+		}
+		current := target[path]
+		current.Path = path
+		current.EditCount++
+		target[path] = current
 	}
 }
 

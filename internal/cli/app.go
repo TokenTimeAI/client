@@ -47,6 +47,8 @@ func Run(ctx context.Context, args []string) int {
 		return runAgents(ctx, paths, args[1:])
 	case "scan":
 		return runScan(ctx, paths, args[1:])
+	case "import":
+		return runImport(ctx, paths, args[1:])
 	case "update":
 		return runUpdate(ctx, paths, args[1:])
 	case "-h", "--help", "help":
@@ -112,6 +114,7 @@ func runStatus(ctx context.Context, paths config.Paths) int {
 	fmt.Printf("Config file:      %s\n", paths.ConfigFile)
 	fmt.Printf("Queue file:       %s\n", paths.QueueFile)
 	fmt.Printf("Collector state:  %s\n", paths.CollectorStateFile)
+	fmt.Printf("Scanner state:    %s\n", paths.ScannerStateFile)
 	fmt.Printf("Daemon manager:   %s\n", status.Manager)
 	fmt.Printf("Daemon installed: %t\n", status.Installed)
 	if status.UnitPath != "" {
@@ -147,8 +150,7 @@ func runDaemon(ctx context.Context, paths config.Paths, args []string) int {
 
 	// Add scanner if not disabled
 	if !*noScan {
-		scannerStatePath := filepath.Join(paths.RootDir, "scanner-state.json")
-		daemon.Scanner = scanner.New(scannerStatePath, 5*time.Minute)
+		daemon.Scanner = scanner.New(paths.ScannerStateFile, 5*time.Minute)
 	}
 
 	if *once {
@@ -246,7 +248,7 @@ func runScan(ctx context.Context, paths config.Paths, args []string) int {
 		return 1
 	}
 
-	scannerStatePath := filepath.Join(paths.RootDir, "scanner-state.json")
+	scannerStatePath := paths.ScannerStateFile
 	if *scanAll {
 		scannerStatePath = filepath.Join(os.TempDir(), fmt.Sprintf("ttime-scan-all-%d.json", time.Now().UnixNano()))
 		defer os.Remove(scannerStatePath)
@@ -341,6 +343,7 @@ Usage:
   ttime daemon [--once] [--no-scan]
   ttime agents          # list detected AI agents
   ttime scan [--agent <name>]  # scan agent databases
+  ttime import replay [--all] [--agent <name>]
   ttime update [--check] [--yes]  # check for or install updates
   ttime install
   ttime uninstall

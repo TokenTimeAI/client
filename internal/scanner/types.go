@@ -53,6 +53,17 @@ type ScanResult struct {
 
 	// Additional metadata
 	Metadata map[string]any `json:"metadata,omitempty"`
+
+	// Replay/import metadata
+	SourceFingerprint string     `json:"source_fingerprint,omitempty"`
+	FileEdits         []FileEdit `json:"file_edits,omitempty"`
+}
+
+type FileEdit struct {
+	Path         string `json:"path"`
+	EditCount    int    `json:"edit_count,omitempty"`
+	LinesAdded   int    `json:"lines_added,omitempty"`
+	LinesDeleted int    `json:"lines_deleted,omitempty"`
 }
 
 // State represents the last scan position for each data source

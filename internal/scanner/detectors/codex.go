@@ -60,6 +60,7 @@ type codexSessionSummary struct {
 	TotalTokens      int
 	TokensKnown      bool
 	HasCumulative    bool
+	FileEdits        map[string]scanner.FileEdit
 }
 
 type codexTokenInfo struct {
@@ -154,6 +155,7 @@ func (d *CodexDetector) Scan(ctx context.Context, state scanner.SourceState) ([]
 			CompletionTokens:       summary.CompletionTokens,
 			TotalTokens:            summary.TotalTokens,
 			Model:                  summary.Model,
+			FileEdits:              flattenFileEdits(summary.FileEdits),
 			Project:                projectNameFromPath(summary.CWD),
 			Metadata: map[string]any{
 				"title": summary.Title,
@@ -197,6 +199,7 @@ func summarizeCodexSession(path string, titles map[string]string) (codexSessionS
 	defer file.Close()
 
 	var summary codexSessionSummary
+	summary.FileEdits = make(map[string]scanner.FileEdit)
 	var lastTaskCompletedAt *time.Time
 	seenSessionMeta := false
 	lineScanner := bufio.NewScanner(file)
@@ -212,6 +215,21 @@ func summarizeCodexSession(path string, titles map[string]string) (codexSessionS
 		}
 
 		switch envelope.Type {
+		case "custom_tool_call":
+			var payload struct {
+				Name  string `json:"name"`
+				Input string `json:"input"`
+			}
+			if err := json.Unmarshal(envelope.Payload, &payload); err == nil && payload.Name == "apply_patch" {
+				mergeFileEdits(summary.FileEdits, parseApplyPatch(payload.Input))
+			}
+		case "custom_tool_call_output":
+			var payload struct {
+				Output string `json:"output"`
+			}
+			if err := json.Unmarshal(envelope.Payload, &payload); err == nil {
+				mergeFileEdits(summary.FileEdits, parseCodexToolOutput(payload.Output))
+			}
 		case "session_meta":
 			var payload struct {
 				ID        string `json:"id"`
@@ -317,4 +335,88 @@ func summarizeCodexSession(path string, titles map[string]string) (codexSessionS
 
 func init() {
 	scanner.Register(NewCodexDetector)
+}
+
+func parseApplyPatch(input string) map[string]scanner.FileEdit {
+	edits := make(map[string]scanner.FileEdit)
+	var currentPath string
+
+	for _, line := range strings.Split(input, "\n") {
+		switch {
+		case strings.HasPrefix(line, "*** Add File: "):
+			currentPath = strings.TrimSpace(strings.TrimPrefix(line, "*** Add File: "))
+			upsertFileEdit(edits, currentPath, 1, 0, 0)
+		case strings.HasPrefix(line, "*** Update File: "):
+			currentPath = strings.TrimSpace(strings.TrimPrefix(line, "*** Update File: "))
+			upsertFileEdit(edits, currentPath, 1, 0, 0)
+		case strings.HasPrefix(line, "*** Delete File: "):
+			currentPath = strings.TrimSpace(strings.TrimPrefix(line, "*** Delete File: "))
+			upsertFileEdit(edits, currentPath, 1, 0, 0)
+		case currentPath != "" && strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++"):
+			upsertFileEdit(edits, currentPath, 0, 1, 0)
+		case currentPath != "" && strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---"):
+			upsertFileEdit(edits, currentPath, 0, 0, 1)
+		}
+	}
+
+	return edits
+}
+
+func parseCodexToolOutput(output string) map[string]scanner.FileEdit {
+	edits := make(map[string]scanner.FileEdit)
+	lines := strings.Split(output, "\n")
+	inChangedFiles := false
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.Contains(trimmed, "Updated the following files:") {
+			inChangedFiles = true
+			continue
+		}
+		if !inChangedFiles || trimmed == "" {
+			continue
+		}
+		if len(trimmed) > 2 && (trimmed[0] == 'M' || trimmed[0] == 'A' || trimmed[0] == 'D') && trimmed[1] == ' ' {
+			upsertFileEdit(edits, strings.TrimSpace(trimmed[2:]), 1, 0, 0)
+		}
+	}
+	return edits
+}
+
+func mergeFileEdits(target map[string]scanner.FileEdit, incoming map[string]scanner.FileEdit) {
+	for path, edit := range incoming {
+		current := target[path]
+		current.Path = path
+		current.EditCount += edit.EditCount
+		current.LinesAdded += edit.LinesAdded
+		current.LinesDeleted += edit.LinesDeleted
+		target[path] = current
+	}
+}
+
+func upsertFileEdit(target map[string]scanner.FileEdit, path string, count int, added int, deleted int) {
+	if strings.TrimSpace(path) == "" {
+		return
+	}
+	current := target[path]
+	current.Path = path
+	current.EditCount += count
+	current.LinesAdded += added
+	current.LinesDeleted += deleted
+	target[path] = current
+}
+
+func flattenFileEdits(raw map[string]scanner.FileEdit) []scanner.FileEdit {
+	if len(raw) == 0 {
+		return nil
+	}
+	paths := make([]string, 0, len(raw))
+	for path := range raw {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	edits := make([]scanner.FileEdit, 0, len(paths))
+	for _, path := range paths {
+		edits = append(edits, raw[path])
+	}
+	return edits
 }

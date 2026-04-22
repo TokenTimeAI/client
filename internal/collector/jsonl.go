@@ -42,6 +42,16 @@ type Event struct {
 	CompletionTokens int    `json:"completion_tokens,omitempty"`
 	TotalTokens      int    `json:"total_tokens,omitempty"`
 	Model            string `json:"model,omitempty"`
+	ImportRunID      string `json:"import_run_id,omitempty"`
+	SourceFingerprint string `json:"source_fingerprint,omitempty"`
+	FileEdits        []FileEdit `json:"file_edits,omitempty"`
+}
+
+type FileEdit struct {
+	Path         string `json:"path"`
+	EditCount    int    `json:"edit_count,omitempty"`
+	LinesAdded   int    `json:"lines_added,omitempty"`
+	LinesDeleted int    `json:"lines_deleted,omitempty"`
 }
 
 type JSONLCollector struct {
@@ -175,6 +185,9 @@ func parseEvent(line []byte) (Event, error) {
 		CompletionTokens:       getInt(body, "completion_tokens"),
 		TotalTokens:            getInt(body, "total_tokens"),
 		Model:                  getString(body, "model"),
+		ImportRunID:            getString(body, "import_run_id"),
+		SourceFingerprint:      getString(body, "source_fingerprint"),
+		FileEdits:              getFileEdits(body, "file_edits"),
 	}, nil
 }
 
@@ -222,6 +235,35 @@ func getOptionalInt(body map[string]any, key string) *int {
 	}
 	parsed := getInt(body, key)
 	return &parsed
+}
+
+func getFileEdits(body map[string]any, key string) []FileEdit {
+	raw, ok := body[key]
+	if !ok {
+		return nil
+	}
+	items, ok := raw.([]any)
+	if !ok {
+		return nil
+	}
+	edits := make([]FileEdit, 0, len(items))
+	for _, item := range items {
+		m, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		path := getString(m, "path")
+		if path == "" {
+			continue
+		}
+		edits = append(edits, FileEdit{
+			Path:         path,
+			EditCount:    getInt(m, "edit_count"),
+			LinesAdded:   getInt(m, "lines_added"),
+			LinesDeleted: getInt(m, "lines_deleted"),
+		})
+	}
+	return edits
 }
 
 func getString(body map[string]any, key string) string {
