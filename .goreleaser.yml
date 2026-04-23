@@ -26,7 +26,10 @@ builds:
       - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
 
 archives:
-  - formats: [zip]
+  - id: ttime
+    ids:
+      - ttime
+    formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -36,7 +39,7 @@ archives:
     format_overrides:
       - goos: linux
         formats: [tar.gz]
-      - goos: darwin
+      - goos: windows
         formats: [zip]
 
 checksum:
