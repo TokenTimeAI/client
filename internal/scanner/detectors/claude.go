@@ -209,10 +209,13 @@ func summarizeClaudeSession(path string) (claudeSessionSummary, bool) {
 				}
 				if usage, ok := message["usage"].(map[string]any); ok {
 					input := intValue(usage["input_tokens"])
+					cacheCreate := intValue(usage["cache_creation_input_tokens"])
+					cacheRead := intValue(usage["cache_read_input_tokens"])
 					output := intValue(usage["output_tokens"])
-					summary.PromptTokens += input
+					totalInput := input + cacheCreate + cacheRead
+					summary.PromptTokens += totalInput
 					summary.CompletionTokens += output
-					summary.TotalTokens += input + output
+					summary.TotalTokens += totalInput + output
 				}
 			}
 			roleEvents = append(roleEvents, claudeRoleEvent{Role: "assistant", Timestamp: timestamp})
