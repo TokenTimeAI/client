@@ -21,6 +21,26 @@ The ttime client is a lightweight Go application that runs on your local machine
   - OpenCode
   - Hermes
   - Codex
+  - Amp
+  - Zencoder
+  - OpenHands
+  - iFlow
+  - VS Code Copilot chat
+  - Pi
+  - Qwen Code
+  - Command Code
+  - QClaw
+  - Kimi
+  - Claude.ai / ChatGPT exports
+  - Kiro / Kiro IDE
+  - Cortex Code
+  - WorkBuddy
+  - Forge
+  - Piebald
+  - Warp
+  - Positron Assistant
+  - Antigravity / Antigravity CLI
+  - Zed
   - And more...
 
 - **Local-First**: All data is collected locally first; no data leaves your machine without explicit sync

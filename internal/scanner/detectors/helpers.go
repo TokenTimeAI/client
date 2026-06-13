@@ -28,6 +28,7 @@ func projectNameFromPath(path string) string {
 	if path == "" {
 		return ""
 	}
+	path = strings.ReplaceAll(path, "\\", string(filepath.Separator))
 	base := filepath.Base(filepath.Clean(path))
 	if base == "." || base == string(filepath.Separator) {
 		return ""

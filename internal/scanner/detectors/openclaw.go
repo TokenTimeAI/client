@@ -123,6 +123,10 @@ func (d *OpenClawDetector) Scan(ctx context.Context, state scanner.SourceState) 
 		}
 	}
 
+	if len(sessions) == 0 {
+		return d.scanAgentsViewTranscripts(ctx, state, agentsDir)
+	}
+
 	// Sort by UpdatedAt (milliseconds)
 	sort.Slice(sessions, func(i, j int) bool {
 		if sessions[i].UpdatedAt != sessions[j].UpdatedAt {
@@ -190,6 +194,33 @@ func (d *OpenClawDetector) Scan(ctx context.Context, state scanner.SourceState) 
 		newState.LastRecordID = session.SessionID
 	}
 
+	return results, newState, nil
+}
+
+func (d *OpenClawDetector) scanAgentsViewTranscripts(ctx context.Context, state scanner.SourceState, agentsDir string) ([]scanner.ScanResult, scanner.SourceState, error) {
+	summaries, err := collectOpenClawGenericSummaries(ctx, agentsDir)
+	if err != nil {
+		return nil, state, err
+	}
+	sort.Slice(summaries, func(i, j int) bool {
+		if !summaries[i].EndedAt.Equal(summaries[j].EndedAt) {
+			return summaries[i].EndedAt.Before(summaries[j].EndedAt)
+		}
+		return summaries[i].SessionID < summaries[j].SessionID
+	})
+
+	results := make([]scanner.ScanResult, 0, len(summaries))
+	newState := state
+	for _, summary := range summaries {
+		endUnix := summary.EndedAt.Unix()
+		if endUnix < state.LastScanTime || (endUnix == state.LastScanTime && summary.SessionID <= state.LastRecordID) {
+			continue
+		}
+		result := scanResultFromAgentsViewSummary("openclaw", summary)
+		results = append(results, result)
+		newState.LastScanTime = endUnix
+		newState.LastRecordID = summary.SessionID
+	}
 	return results, newState, nil
 }
 

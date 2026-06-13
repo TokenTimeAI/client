@@ -276,22 +276,8 @@ func recordClaudeToolUseFileEdits(target map[string]scanner.FileEdit, message ma
 		if !ok || strings.TrimSpace(stringValue(entry["type"])) != "tool_use" {
 			continue
 		}
-		name := strings.TrimSpace(stringValue(entry["name"]))
-		if name != "Edit" && name != "MultiEdit" && name != "Write" && name != "NotebookEdit" {
-			continue
-		}
 		input, _ := entry["input"].(map[string]any)
-		path := strings.TrimSpace(stringValue(input["file_path"]))
-		if path == "" {
-			path = strings.TrimSpace(stringValue(input["notebook_path"]))
-		}
-		if path == "" {
-			continue
-		}
-		current := target[path]
-		current.Path = path
-		current.EditCount++
-		target[path] = current
+		mergeFileEdits(target, fileEditsFromToolCall(strings.TrimSpace(stringValue(entry["name"])), input))
 	}
 }
 

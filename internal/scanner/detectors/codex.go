@@ -223,6 +223,8 @@ func summarizeCodexSession(path string, titles map[string]string) (codexSessionS
 			if err := json.Unmarshal(envelope.Payload, &payload); err == nil && payload.Name == "apply_patch" {
 				mergeFileEdits(summary.FileEdits, parseApplyPatch(payload.Input))
 			}
+		case "response_item":
+			mergeFileEdits(summary.FileEdits, parseCodexResponseItemFileEdits(envelope.Payload))
 		case "custom_tool_call_output":
 			var payload struct {
 				Output string `json:"output"`
@@ -331,6 +333,32 @@ func summarizeCodexSession(path string, titles map[string]string) (codexSessionS
 		summary.TotalTokens = summary.PromptTokens + summary.CompletionTokens
 	}
 	return summary, true
+}
+
+func parseCodexResponseItemFileEdits(payloadJSON json.RawMessage) map[string]scanner.FileEdit {
+	var payload struct {
+		Type      string          `json:"type"`
+		Name      string          `json:"name"`
+		Arguments json.RawMessage `json:"arguments"`
+	}
+	if err := json.Unmarshal(payloadJSON, &payload); err != nil {
+		return map[string]scanner.FileEdit{}
+	}
+	if strings.TrimSpace(payload.Type) != "function_call" {
+		return map[string]scanner.FileEdit{}
+	}
+
+	var rawArgs string
+	if err := json.Unmarshal(payload.Arguments, &rawArgs); err == nil {
+		return fileEditsFromToolCallJSON(payload.Name, rawArgs)
+	}
+
+	var input map[string]any
+	if err := json.Unmarshal(payload.Arguments, &input); err == nil {
+		return fileEditsFromToolCall(payload.Name, input)
+	}
+
+	return map[string]scanner.FileEdit{}
 }
 
 func init() {
