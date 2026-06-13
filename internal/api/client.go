@@ -45,15 +45,15 @@ type Heartbeat struct {
 	OperatingSystem        string         `json:"operating_system,omitempty"`
 
 	// Conversation tracking
-	ConversationID   string `json:"conversation_id,omitempty"`
-	MessageID        string `json:"message_id,omitempty"`
-	PromptTokens     int    `json:"prompt_tokens,omitempty"`
-	CompletionTokens int    `json:"completion_tokens,omitempty"`
-	TotalTokens      int    `json:"total_tokens,omitempty"`
-	Model            string `json:"model,omitempty"`
-	ImportRunID      string `json:"import_run_id,omitempty"`
-	SourceFingerprint string `json:"source_fingerprint,omitempty"`
-	FileEdits        []FileEdit `json:"file_edits,omitempty"`
+	ConversationID    string     `json:"conversation_id,omitempty"`
+	MessageID         string     `json:"message_id,omitempty"`
+	PromptTokens      int        `json:"prompt_tokens,omitempty"`
+	CompletionTokens  int        `json:"completion_tokens,omitempty"`
+	TotalTokens       int        `json:"total_tokens,omitempty"`
+	Model             string     `json:"model,omitempty"`
+	ImportRunID       string     `json:"import_run_id,omitempty"`
+	SourceFingerprint string     `json:"source_fingerprint,omitempty"`
+	FileEdits         []FileEdit `json:"file_edits,omitempty"`
 }
 
 type FileEdit struct {
@@ -120,7 +120,7 @@ func NewClient(baseURL, apiKey string) *Client {
 		BaseURL: strings.TrimRight(baseURL, "/"),
 		APIKey:  apiKey,
 		HTTPClient: &http.Client{
-			Timeout: 15 * time.Second,
+			Timeout: 60 * time.Second,
 		},
 	}
 }
@@ -180,16 +180,16 @@ func (c *Client) SendHeartbeatsDetailed(ctx context.Context, heartbeats []Heartb
 func (c *Client) CreateImportRun(ctx context.Context, run ImportRun) (ImportRun, error) {
 	payload, err := json.Marshal(map[string]any{
 		"import_run": map[string]any{
-			"machine": run.Machine,
-			"trigger_kind": run.TriggerKind,
-			"status": run.Status,
-			"agent_filters": run.AgentFilters,
-			"replay_all": run.ReplayAll,
-			"started_at": run.StartedAt.Format(time.RFC3339),
-			"sessions_seen": run.SessionsSeen,
+			"machine":           run.Machine,
+			"trigger_kind":      run.TriggerKind,
+			"status":            run.Status,
+			"agent_filters":     run.AgentFilters,
+			"replay_all":        run.ReplayAll,
+			"started_at":        run.StartedAt.Format(time.RFC3339),
+			"sessions_seen":     run.SessionsSeen,
 			"sessions_imported": run.SessionsImported,
-			"sessions_updated": run.SessionsUpdated,
-			"sessions_skipped": run.SessionsSkipped,
+			"sessions_updated":  run.SessionsUpdated,
+			"sessions_skipped":  run.SessionsSkipped,
 		},
 	})
 	if err != nil {
@@ -218,13 +218,13 @@ func (c *Client) CreateImportRun(ctx context.Context, run ImportRun) (ImportRun,
 func (c *Client) UpdateImportRun(ctx context.Context, run ImportRun) (ImportRun, error) {
 	payload, err := json.Marshal(map[string]any{
 		"import_run": map[string]any{
-			"status": run.Status,
-			"completed_at": formatTimePtrValue(run.CompletedAt),
-			"error_summary": run.ErrorSummary,
-			"sessions_seen": run.SessionsSeen,
+			"status":            run.Status,
+			"completed_at":      formatTimePtrValue(run.CompletedAt),
+			"error_summary":     run.ErrorSummary,
+			"sessions_seen":     run.SessionsSeen,
 			"sessions_imported": run.SessionsImported,
-			"sessions_updated": run.SessionsUpdated,
-			"sessions_skipped": run.SessionsSkipped,
+			"sessions_updated":  run.SessionsUpdated,
+			"sessions_skipped":  run.SessionsSkipped,
 		},
 	})
 	if err != nil {

@@ -182,6 +182,30 @@ func (d *HermesDetector) scanJSONL(ctx context.Context, state scanner.SourceStat
 		return nil, state, fmt.Errorf("read hermes sessions dir: %w", err)
 	}
 
+	if summaries, err := collectHermesGenericSummaries(ctx, sessionsDir); err != nil {
+		return nil, state, err
+	} else if len(summaries) > 0 {
+		sort.Slice(summaries, func(i, j int) bool {
+			if !summaries[i].EndedAt.Equal(summaries[j].EndedAt) {
+				return summaries[i].EndedAt.Before(summaries[j].EndedAt)
+			}
+			return summaries[i].SessionID < summaries[j].SessionID
+		})
+		results := make([]scanner.ScanResult, 0, len(summaries))
+		newState := state
+		for _, summary := range summaries {
+			endUnix := summary.EndedAt.Unix()
+			if endUnix < state.LastScanTime || (endUnix == state.LastScanTime && summary.SessionID <= state.LastRecordID) {
+				continue
+			}
+			result := scanResultFromAgentsViewSummary("hermes", summary)
+			results = append(results, result)
+			newState.LastScanTime = endUnix
+			newState.LastRecordID = summary.SessionID
+		}
+		return results, newState, nil
+	}
+
 	type jsonlSession struct {
 		ID        string `json:"id"`
 		Title     string `json:"title"`
