@@ -39,7 +39,7 @@ func (r ScanResult) ToEvent() collector.Event {
 		LinesAdded:             r.LinesAdded,
 		LinesDeleted:           r.LinesDeleted,
 		CostUSD:                r.CostUSD,
-		Metadata:               r.Metadata,
+		Metadata:               metadataWithGitContext(r),
 		ConversationID:         r.ConversationID,
 		MessageID:              r.MessageID,
 		PromptTokens:           r.PromptTokens,
