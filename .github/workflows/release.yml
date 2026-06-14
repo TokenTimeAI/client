@@ -62,6 +62,6 @@ jobs:
           args=(release --clean)
           if [ -z "${TAP_GITHUB_TOKEN}" ]; then
             echo "TAP_GITHUB_TOKEN is not configured; skipping Homebrew tap publish"
-            args+=(--skip=brew)
+            args+=(--skip=homebrew)
           fi
           goreleaser "${args[@]}"
