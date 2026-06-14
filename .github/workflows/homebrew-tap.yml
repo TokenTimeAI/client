@@ -29,22 +29,31 @@ jobs:
           version: latest
           install-only: true
 
-      - name: Publish Homebrew formula
+      - name: Generate Homebrew formula
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: goreleaser release --clean --skip=publish --skip=validate --skip=announce
+
+      - name: Push formula to tap
+        env:
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
         run: |
           if [ -z "${TAP_GITHUB_TOKEN}" ]; then
             echo "TAP_GITHUB_TOKEN must be configured to publish the Homebrew tap"
             exit 1
           fi
-          goreleaser release --clean \
-            --skip=announce \
-            --skip=archive \
-            --skip=before \
-            --skip=changelog \
-            --skip=validate \
-            --skip=sign \
-            --skip=sbom \
-            --skip=report \
-            --skip=github
+
+          tag="${{ github.event.inputs.version }}"
+          git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/tokentimeai/homebrew-tap.git" /tmp/homebrew-tap
+          mkdir -p /tmp/homebrew-tap/Formula
+          cp dist/homebrew/Formula/ttime.rb /tmp/homebrew-tap/Formula/ttime.rb
+          cd /tmp/homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/ttime.rb
+          if git diff --cached --quiet; then
+            echo "Homebrew formula already up to date for ${tag}"
+            exit 0
+          fi
+          git commit -m "Brew formula update for ttime version ${tag}"
+          git push origin main

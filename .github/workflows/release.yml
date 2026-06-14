@@ -62,14 +62,12 @@ jobs:
           args=(release --clean)
           tag="$(git describe --tags --exact-match 2>/dev/null || true)"
 
-          if [ -z "${TAP_GITHUB_TOKEN}" ]; then
+          if [ -n "${tag}" ] && gh release view "${tag}" >/dev/null 2>&1; then
+            echo "GitHub release ${tag} already exists; skipping publish steps"
+            args+=(--skip=publish)
+          elif [ -z "${TAP_GITHUB_TOKEN}" ]; then
             echo "TAP_GITHUB_TOKEN is not configured; skipping Homebrew tap publish"
             args+=(--skip=homebrew)
-          fi
-
-          if [ -n "${tag}" ] && gh release view "${tag}" >/dev/null 2>&1; then
-            echo "GitHub release ${tag} already exists; skipping GitHub publish"
-            args+=(--skip=github)
           fi
 
           goreleaser "${args[@]}"
