@@ -20,6 +20,14 @@ import (
 	"github.com/ttime-ai/ttime/client/internal/updater"
 )
 
+var currentVersion = "dev"
+
+func SetVersion(version string) {
+	if version != "" {
+		currentVersion = version
+	}
+}
+
 func Run(ctx context.Context, args []string) int {
 	if len(args) == 0 {
 		printUsage()
@@ -51,6 +59,9 @@ func Run(ctx context.Context, args []string) int {
 		return runImport(ctx, paths, args[1:])
 	case "update":
 		return runUpdate(ctx, paths, args[1:])
+	case "version":
+		fmt.Println(currentVersion)
+		return 0
 	case "-h", "--help", "help":
 		printUsage()
 		return 0
@@ -288,11 +299,7 @@ func runUpdate(ctx context.Context, paths config.Paths, args []string) int {
 		return 1
 	}
 
-	// Get current version from ldflags or default to "dev"
-	version := os.Getenv("TTIME_VERSION")
-	if version == "" {
-		version = "dev"
-	}
+	version := currentVersion
 
 	u := updater.New(version, cfg.ServerURL)
 	result, err := u.CheckForUpdate()
@@ -345,6 +352,7 @@ Usage:
   ttime scan [--agent <name>]  # scan agent databases
   ttime import replay [--all] [--agent <name>]
   ttime update [--check] [--yes]  # check for or install updates
+  ttime version
   ttime install
   ttime uninstall
 `)
