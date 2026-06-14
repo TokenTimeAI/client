@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -57,4 +58,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
-        run: goreleaser release --clean
+        run: |
+          args=(release --clean)
+          if [ -z "${TAP_GITHUB_TOKEN}" ]; then
+            echo "TAP_GITHUB_TOKEN is not configured; skipping Homebrew tap publish"
+            args+=(--skip=brew)
+          fi
+          goreleaser "${args[@]}"

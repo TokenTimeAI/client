@@ -1,0 +1,50 @@
+name: Publish Homebrew Tap
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Existing release tag to publish the Homebrew formula for (e.g., v0.1.9)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  homebrew:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.version }}
+
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: latest
+          install-only: true
+
+      - name: Publish Homebrew formula
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          if [ -z "${TAP_GITHUB_TOKEN}" ]; then
+            echo "TAP_GITHUB_TOKEN must be configured to publish the Homebrew tap"
+            exit 1
+          fi
+          goreleaser release --clean \
+            --skip=announce \
+            --skip=archive \
+            --skip=before \
+            --skip=changelog \
+            --skip=validate \
+            --skip=sign \
+            --skip=sbom \
+            --skip=report \
+            --skip=github
