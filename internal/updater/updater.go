@@ -95,20 +95,26 @@ func (u *Updater) PerformUpdate(asset *Asset) error {
 		binaryPath = filepath.Clean(binaryPath)
 	}
 
-	// Download new binary
+	// Download release asset (tar.gz or zip archive).
 	tempFile, err := u.downloadBinary(asset.URL)
 	if err != nil {
 		return fmt.Errorf("download binary: %w", err)
 	}
 	defer os.Remove(tempFile)
 
+	installBinary, cleanupExtract, err := prepareInstallBinary(tempFile, asset.Name)
+	if err != nil {
+		return fmt.Errorf("prepare install binary: %w", err)
+	}
+	defer cleanupExtract()
+
 	// On Windows, we can't replace a running binary directly
 	if runtime.GOOS == "windows" {
-		return u.updateWindows(binaryPath, tempFile)
+		return u.updateWindows(binaryPath, installBinary)
 	}
 
 	// Replace binary atomically
-	if err := u.replaceBinary(binaryPath, tempFile); err != nil {
+	if err := u.replaceBinary(binaryPath, installBinary); err != nil {
 		return fmt.Errorf("replace binary: %w", err)
 	}
 
@@ -161,7 +167,8 @@ func (u *Updater) findMatchingAsset(assets []Asset) *Asset {
 }
 
 func (u *Updater) downloadBinary(url string) (string, error) {
-	resp, err := u.httpClient.Get(url)
+	client := &http.Client{Timeout: 2 * time.Minute}
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", err
 	}
