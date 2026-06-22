@@ -12,6 +12,7 @@ import (
 	"github.com/ttime-ai/ttime/client/internal/api"
 	"github.com/ttime-ai/ttime/client/internal/collector"
 	"github.com/ttime-ai/ttime/client/internal/queue"
+	"github.com/ttime-ai/ttime/client/internal/platform"
 	"github.com/ttime-ai/ttime/client/internal/service"
 )
 
@@ -46,10 +47,11 @@ func TestDaemonRunOnceProcessesFixtureInbox(t *testing.T) {
 	defer server.Close()
 
 	daemon := service.Daemon{
-		Collector:   collector.NewJSONLCollector(inboxDir, filepath.Join(tempDir, "collector-state.json")),
-		Queue:       queue.New(filepath.Join(tempDir, "queue.jsonl")),
-		Sender:      api.NewClient(server.URL, "tt_test"),
-		MachineName: "builder",
+		Collector:       collector.NewJSONLCollector(inboxDir, filepath.Join(tempDir, "collector-state.json")),
+		Queue:           queue.New(filepath.Join(tempDir, "queue.jsonl")),
+		Sender:          api.NewClient(server.URL, "tt_test"),
+		MachineName:     "builder",
+		MachineIdentity: platform.Identity{MACAddress: "aa:bb:cc:dd:ee:ff", NetworkName: "builder"},
 	}
 
 	result, err := daemon.RunOnce(context.Background())
@@ -64,6 +66,9 @@ func TestDaemonRunOnceProcessesFixtureInbox(t *testing.T) {
 	}
 	if received[0].Machine != "builder" {
 		t.Fatalf("expected normalized machine name, got %q", received[0].Machine)
+	}
+	if received[0].MachineMAC != "aa:bb:cc:dd:ee:ff" {
+		t.Fatalf("expected machine mac, got %q", received[0].MachineMAC)
 	}
 }
 
@@ -94,10 +99,11 @@ func TestDaemonRetriesQueuedEvents(t *testing.T) {
 
 	spool := queue.New(filepath.Join(tempDir, "queue.jsonl"))
 	daemon := service.Daemon{
-		Collector:   collector.NewJSONLCollector(inboxDir, filepath.Join(tempDir, "collector-state.json")),
-		Queue:       spool,
-		Sender:      api.NewClient(server.URL, "tt_test"),
-		MachineName: "builder",
+		Collector:       collector.NewJSONLCollector(inboxDir, filepath.Join(tempDir, "collector-state.json")),
+		Queue:           spool,
+		Sender:          api.NewClient(server.URL, "tt_test"),
+		MachineName:     "builder",
+		MachineIdentity: platform.Identity{MACAddress: "aa:bb:cc:dd:ee:ff", NetworkName: "builder"},
 	}
 
 	if _, err := daemon.RunOnce(context.Background()); err == nil {

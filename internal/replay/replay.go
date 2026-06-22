@@ -10,6 +10,7 @@ import (
 	"github.com/ttime-ai/ttime/client/internal/api"
 	"github.com/ttime-ai/ttime/client/internal/config"
 	"github.com/ttime-ai/ttime/client/internal/normalize"
+	"github.com/ttime-ai/ttime/client/internal/platform"
 	"github.com/ttime-ai/ttime/client/internal/scanner"
 )
 
@@ -128,7 +129,10 @@ func (r Runner) Run(ctx context.Context, cfg config.Config, paths config.Paths, 
 	for _, result := range results {
 		event := result.ToEvent()
 		event.ImportRunID = importRun.ID
-		heartbeat := normalize.Event(event, normalize.Options{MachineName: cfg.MachineName})
+	heartbeat := normalize.Event(event, normalize.Options{
+		MachineName: cfg.MachineName,
+		Identity:    platform.ResolveIdentity(cfg.MachineName),
+	})
 		heartbeat.ImportRunID = importRun.ID
 		heartbeats = append(heartbeats, heartbeat)
 	}

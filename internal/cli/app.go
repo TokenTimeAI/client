@@ -119,7 +119,11 @@ func runStatus(ctx context.Context, paths config.Paths) int {
 	}
 
 	fmt.Printf("Server:           %s\n", cfg.ServerURL)
-	fmt.Printf("Machine:          %s\n", cfg.MachineName)
+	identity := platform.ResolveIdentity(cfg.MachineName)
+	fmt.Printf("Machine:          %s\n", identity.NetworkName)
+	if identity.MACAddress != "" {
+		fmt.Printf("Machine MAC:      %s\n", identity.MACAddress)
+	}
 	fmt.Printf("Inbox dir:        %s\n", cfg.InboxDir)
 	fmt.Printf("Poll interval:    %ds\n", cfg.PollIntervalSeconds)
 	fmt.Printf("Config file:      %s\n", paths.ConfigFile)
@@ -152,11 +156,12 @@ func runDaemon(ctx context.Context, paths config.Paths, args []string) int {
 	}
 
 	daemon := service.Daemon{
-		Collector:    collector.NewJSONLCollector(cfg.InboxDir, paths.CollectorStateFile),
-		Queue:        queue.New(paths.QueueFile),
-		Sender:       api.NewClient(cfg.ServerURL, cfg.APIKey),
-		MachineName:  cfg.MachineName,
-		PollInterval: time.Duration(cfg.PollIntervalSeconds) * time.Second,
+		Collector:       collector.NewJSONLCollector(cfg.InboxDir, paths.CollectorStateFile),
+		Queue:           queue.New(paths.QueueFile),
+		Sender:          api.NewClient(cfg.ServerURL, cfg.APIKey),
+		MachineName:     cfg.MachineName,
+		MachineIdentity: platform.ResolveIdentity(cfg.MachineName),
+		PollInterval:    time.Duration(cfg.PollIntervalSeconds) * time.Second,
 	}
 
 	// Add scanner if not disabled

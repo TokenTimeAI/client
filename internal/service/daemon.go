@@ -7,6 +7,7 @@ import (
 	"github.com/ttime-ai/ttime/client/internal/api"
 	"github.com/ttime-ai/ttime/client/internal/collector"
 	"github.com/ttime-ai/ttime/client/internal/normalize"
+	"github.com/ttime-ai/ttime/client/internal/platform"
 	"github.com/ttime-ai/ttime/client/internal/scanner"
 )
 
@@ -33,6 +34,7 @@ type Daemon struct {
 	Queue        Queue
 	Sender       Sender
 	MachineName  string
+	MachineIdentity platform.Identity
 	PollInterval time.Duration
 	Scanner      AgentScanner
 }
@@ -42,6 +44,17 @@ type Result struct {
 	Collected        int
 	Scanned          int
 	Sent             int
+}
+
+func (d *Daemon) normalizeOptions() normalize.Options {
+	identity := d.MachineIdentity
+	if identity.NetworkName == "" {
+		identity.NetworkName = d.MachineName
+	}
+	return normalize.Options{
+		MachineName: d.MachineName,
+		Identity:    identity,
+	}
 }
 
 func (d *Daemon) RunOnce(ctx context.Context) (Result, error) {
@@ -59,9 +72,7 @@ func (d *Daemon) RunOnce(ctx context.Context) (Result, error) {
 	// Normalize collected events
 	events := make([]api.Heartbeat, 0, len(collectedRaw))
 	for _, raw := range collectedRaw {
-		events = append(events, normalize.Event(raw, normalize.Options{
-			MachineName: d.MachineName,
-		}))
+		events = append(events, normalize.Event(raw, d.normalizeOptions()))
 	}
 
 	// Scan agent databases if scanner is configured
@@ -72,9 +83,7 @@ func (d *Daemon) RunOnce(ctx context.Context) (Result, error) {
 			// Convert scan results to heartbeats
 			for _, result := range scanResults {
 				event := result.ToEvent()
-				scannedEvents = append(scannedEvents, normalize.Event(event, normalize.Options{
-					MachineName: d.MachineName,
-				}))
+				scannedEvents = append(scannedEvents, normalize.Event(event, d.normalizeOptions()))
 			}
 		}
 	}

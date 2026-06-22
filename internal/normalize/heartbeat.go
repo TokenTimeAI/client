@@ -5,16 +5,23 @@ import (
 
 	"github.com/ttime-ai/ttime/client/internal/api"
 	"github.com/ttime-ai/ttime/client/internal/collector"
+	"github.com/ttime-ai/ttime/client/internal/platform"
 )
 
 type Options struct {
 	MachineName string
+	Identity    platform.Identity
 }
 
 func Event(raw collector.Event, opts Options) api.Heartbeat {
 	eventType := raw.Type
 	if eventType == "" {
 		eventType = "file"
+	}
+
+	networkName := opts.Identity.NetworkName
+	if networkName == "" {
+		networkName = opts.MachineName
 	}
 
 	return api.Heartbeat{
@@ -32,7 +39,9 @@ func Event(raw collector.Event, opts Options) api.Heartbeat {
 		LinesDeleted:        raw.LinesDeleted,
 		CostUSD:             raw.CostUSD,
 		Metadata:            raw.Metadata,
-		Machine:             opts.MachineName,
+		Machine:             networkName,
+		MachineMAC:          opts.Identity.MACAddress,
+		MachineNetworkName:  networkName,
 		OperatingSystem:     runtime.GOOS,
 		ConversationID:      raw.ConversationID,
 		MessageID:           raw.MessageID,

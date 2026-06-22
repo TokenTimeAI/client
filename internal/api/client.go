@@ -36,6 +36,8 @@ type Heartbeat struct {
 	CostUSD                float64        `json:"cost_usd,omitempty"`
 	Metadata               map[string]any `json:"metadata,omitempty"`
 	Machine                string         `json:"machine,omitempty"`
+	MachineMAC             string         `json:"machine_mac,omitempty"`
+	MachineNetworkName     string         `json:"machine_network_name,omitempty"`
 	OperatingSystem        string         `json:"operating_system,omitempty"`
 
 	// Conversation tracking
