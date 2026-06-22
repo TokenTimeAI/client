@@ -36,8 +36,8 @@ func TestGenericAgentsViewDetectorImportsOpenClawUsageAndFileEdits(t *testing.T)
 	if result.Model != "openclaw-model" {
 		t.Fatalf("model = %q, want openclaw-model", result.Model)
 	}
-	if result.PromptTokens != 37 || result.CompletionTokens != 9 || result.TotalTokens != 46 {
-		t.Fatalf("tokens = P%d C%d T%d, want P37 C9 T46", result.PromptTokens, result.CompletionTokens, result.TotalTokens)
+	if result.PromptTokens != 31 || result.CachedTokens != 4 || result.CacheCreationTokens != 2 || result.CompletionTokens != 9 || result.TotalTokens != 46 {
+		t.Fatalf("tokens = P%d CR%d CW%d C%d T%d, want P31 CR4 CW2 C9 T46", result.PromptTokens, result.CachedTokens, result.CacheCreationTokens, result.CompletionTokens, result.TotalTokens)
 	}
 	if len(result.FileEdits) != 1 || result.FileEdits[0].Path != "app/services/heartbeat_ingestion.rb" {
 		t.Fatalf("file edits = %#v, want OpenClaw edit target", result.FileEdits)
@@ -71,8 +71,8 @@ func TestGenericAgentsViewDetectorImportsQClawUsageAndFileEdits(t *testing.T) {
 	if result.Model != "qclaw-model" {
 		t.Fatalf("model = %q, want qclaw-model", result.Model)
 	}
-	if result.PromptTokens != 25 || result.CompletionTokens != 7 || result.TotalTokens != 32 {
-		t.Fatalf("tokens = P%d C%d T%d, want P25 C7 T32", result.PromptTokens, result.CompletionTokens, result.TotalTokens)
+	if result.PromptTokens != 21 || result.CachedTokens != 3 || result.CacheCreationTokens != 1 || result.CompletionTokens != 7 || result.TotalTokens != 32 {
+		t.Fatalf("tokens = P%d CR%d CW%d C%d T%d, want P21 CR3 CW1 C7 T32", result.PromptTokens, result.CachedTokens, result.CacheCreationTokens, result.CompletionTokens, result.TotalTokens)
 	}
 	if len(result.FileEdits) != 1 || result.FileEdits[0].Path != "app/controllers/api/v1/heartbeats_controller.rb" {
 		t.Fatalf("file edits = %#v, want QClaw write_file target", result.FileEdits)
@@ -102,8 +102,8 @@ func TestGenericAgentsViewDetectorImportsHermesToolCalls(t *testing.T) {
 	if result.Model != "hermes-model" {
 		t.Fatalf("model = %q, want hermes-model", result.Model)
 	}
-	if result.PromptTokens != 26 || result.CompletionTokens != 8 || result.TotalTokens != 34 {
-		t.Fatalf("tokens = P%d C%d T%d, want P26 C8 T34", result.PromptTokens, result.CompletionTokens, result.TotalTokens)
+	if result.PromptTokens != 22 || result.CachedTokens != 3 || result.CacheCreationTokens != 1 || result.CompletionTokens != 8 || result.TotalTokens != 34 {
+		t.Fatalf("tokens = P%d CR%d CW%d C%d T%d, want P22 CR3 CW1 C8 T34", result.PromptTokens, result.CachedTokens, result.CacheCreationTokens, result.CompletionTokens, result.TotalTokens)
 	}
 	if len(result.FileEdits) != 1 || result.FileEdits[0].Path != "app/models/heartbeat_event.rb" {
 		t.Fatalf("file edits = %#v, want Hermes write_file target", result.FileEdits)
@@ -142,8 +142,8 @@ func TestOpenClawDetectorImportsAgentsViewTranscriptWithoutIndex(t *testing.T) {
 	if results[0].Project != "ttime" || results[0].Entity != "/Users/pz/w/ttime" {
 		t.Fatalf("project/entity = %q/%q, want ttime//Users/pz/w/ttime", results[0].Project, results[0].Entity)
 	}
-	if results[0].PromptTokens != 37 || results[0].CompletionTokens != 9 || results[0].TotalTokens != 46 {
-		t.Fatalf("tokens = P%d C%d T%d, want P37 C9 T46", results[0].PromptTokens, results[0].CompletionTokens, results[0].TotalTokens)
+	if results[0].PromptTokens != 31 || results[0].CachedTokens != 4 || results[0].CacheCreationTokens != 2 || results[0].CompletionTokens != 9 || results[0].TotalTokens != 46 {
+		t.Fatalf("tokens = P%d CR%d CW%d C%d T%d, want P31 CR4 CW2 C9 T46", results[0].PromptTokens, results[0].CachedTokens, results[0].CacheCreationTokens, results[0].CompletionTokens, results[0].TotalTokens)
 	}
 	if len(results[0].FileEdits) != 1 || results[0].FileEdits[0].Path != "app/services/heartbeat_ingestion.rb" {
 		t.Fatalf("file edits = %#v, want OpenClaw edit target", results[0].FileEdits)
@@ -181,8 +181,8 @@ func TestHermesDetectorImportsAgentsViewTranscript(t *testing.T) {
 	if results[0].Project != "hermes-cli" {
 		t.Fatalf("project = %q, want hermes-cli", results[0].Project)
 	}
-	if results[0].PromptTokens != 26 || results[0].CompletionTokens != 8 || results[0].TotalTokens != 34 {
-		t.Fatalf("tokens = P%d C%d T%d, want P26 C8 T34", results[0].PromptTokens, results[0].CompletionTokens, results[0].TotalTokens)
+	if results[0].PromptTokens != 22 || results[0].CachedTokens != 3 || results[0].CacheCreationTokens != 1 || results[0].CompletionTokens != 8 || results[0].TotalTokens != 34 {
+		t.Fatalf("tokens = P%d CR%d CW%d C%d T%d, want P22 CR3 CW1 C8 T34", results[0].PromptTokens, results[0].CachedTokens, results[0].CacheCreationTokens, results[0].CompletionTokens, results[0].TotalTokens)
 	}
 	if len(results[0].FileEdits) != 1 || results[0].FileEdits[0].Path != "app/models/heartbeat_event.rb" {
 		t.Fatalf("file edits = %#v, want Hermes write_file target", results[0].FileEdits)

@@ -291,6 +291,7 @@ The client can detect and scan the following AI coding assistants:
 | OpenCode | `opencode` | `~/.opencode`, `~/.config/opencode` |
 | Hermes | `hermes` | `~/.hermes`, `~/.config/hermes` |
 | Codex | `codex` | `~/.codex`, `~/.config/codex` |
+| Roder | `roder` | `~/.roder` (`RODER_CONFIG_DIR`, `RODER_DATA_DIR`) |
 
 ## Contributing
 

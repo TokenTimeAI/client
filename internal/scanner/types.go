@@ -13,15 +13,9 @@ type ScanResult struct {
 	Type      string `json:"type"`   // "conversation", "file", "command", etc.
 
 	// Timing
-	Time                   float64    `json:"time"`      // Unix timestamp
-	Duration               float64    `json:"duration"`  // Duration in seconds
-	Timestamp              time.Time  `json:"timestamp"` // Parsed time
-	SessionStartedAt       *time.Time `json:"session_started_at,omitempty"`
-	SessionEndedAt         *time.Time `json:"session_ended_at,omitempty"`
-	SessionDurationSeconds *int       `json:"session_duration_seconds,omitempty"`
-	AgentActiveSeconds     *int       `json:"agent_active_seconds,omitempty"`
-	HumanActiveSeconds     *int       `json:"human_active_seconds,omitempty"`
-	IdleSeconds            *int       `json:"idle_seconds,omitempty"`
+	Time      float64   `json:"time"`      // Unix timestamp
+	Duration  float64   `json:"duration"`  // Duration in seconds
+	Timestamp time.Time `json:"timestamp"` // Parsed time
 
 	// Conversation metadata
 	ConversationID  string `json:"conversation_id,omitempty"`
@@ -29,10 +23,13 @@ type ScanResult struct {
 	ParentMessageID string `json:"parent_message_id,omitempty"`
 
 	// Token usage (what we really care about)
-	PromptTokens     int  `json:"prompt_tokens,omitempty"`
-	CompletionTokens int  `json:"completion_tokens,omitempty"`
-	TotalTokens      int  `json:"total_tokens,omitempty"`
-	TokenUsageKnown  bool `json:"token_usage_known,omitempty"`
+	PromptTokens          int  `json:"prompt_tokens,omitempty"`
+	CompletionTokens      int  `json:"completion_tokens,omitempty"`
+	CachedTokens          int  `json:"cached_tokens,omitempty"`
+	CacheCreationTokens   int  `json:"cache_creation_tokens,omitempty"`
+	ReasoningTokens       int  `json:"reasoning_tokens,omitempty"`
+	TotalTokens           int  `json:"total_tokens,omitempty"`
+	TokenUsageKnown       bool `json:"token_usage_known,omitempty"`
 
 	// Cost tracking
 	CostUSD float64 `json:"cost_usd,omitempty"`

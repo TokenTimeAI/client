@@ -222,9 +222,6 @@ func (d *GeminiCLIDetector) scanCurrentChats(ctx context.Context, state scanner.
 				Model:                  msg.Model,
 				FileEdits:              flattenFileEdits(fileEdits),
 				Project:                project.Name,
-				SessionStartedAt:       timePtr(startedAt),
-				SessionEndedAt:         timePtr(endedAt),
-				SessionDurationSeconds: intPtr(durationSeconds(startedAt, endedAt)),
 				Metadata: map[string]any{
 					"parser": "gemini_current_chats",
 				},

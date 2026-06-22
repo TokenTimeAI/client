@@ -146,8 +146,8 @@ func TestGenericAgentsViewDetectorImportsCopilotEventStream(t *testing.T) {
 	if result.Model != "claude-sonnet-4" {
 		t.Fatalf("model = %q, want claude-sonnet-4", result.Model)
 	}
-	if result.PromptTokens != 20 || result.CompletionTokens != 12 || result.TotalTokens != 32 {
-		t.Fatalf("tokens = P%d C%d T%d, want P20 C12 T32", result.PromptTokens, result.CompletionTokens, result.TotalTokens)
+	if result.PromptTokens != 20 || result.CachedTokens != 3 || result.CacheCreationTokens != 2 || result.CompletionTokens != 7 || result.ReasoningTokens != 5 || result.TotalTokens != 37 {
+		t.Fatalf("tokens = P%d CR%d CW%d C%d R%d T%d, want P20 CR3 CW2 C7 R5 T37", result.PromptTokens, result.CachedTokens, result.CacheCreationTokens, result.CompletionTokens, result.ReasoningTokens, result.TotalTokens)
 	}
 	if len(result.FileEdits) != 1 || result.FileEdits[0].Path != "app/services/heartbeat_ingestion.rb" {
 		t.Fatalf("file edits = %#v, want Copilot edit target", result.FileEdits)

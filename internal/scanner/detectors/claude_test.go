@@ -32,15 +32,22 @@ func TestSummarizeClaudeSessionIncludesCacheTokens(t *testing.T) {
 		t.Fatal("summarizeClaudeSession returned !ok")
 	}
 
-	// Per-turn input = input + cache_creation + cache_read.
-	// Turn 1: 6 + 13625 + 16004 = 29635
-	// Turn 2: 1 + 786 + 29629   = 30416
-	wantPrompt := 29635 + 30416
+	// Turn 1: input=6, cache_create=13625, cache_read=16004, output=261
+	// Turn 2: input=1, cache_create=786, cache_read=29629, output=102
+	wantPrompt := 6 + 1
+	wantCacheCreation := 13625 + 786
+	wantCached := 16004 + 29629
 	wantCompletion := 261 + 102
-	wantTotal := wantPrompt + wantCompletion
+	wantTotal := wantPrompt + wantCacheCreation + wantCached + wantCompletion
 
 	if summary.PromptTokens != wantPrompt {
-		t.Errorf("PromptTokens = %d, want %d (cache tokens must be summed)", summary.PromptTokens, wantPrompt)
+		t.Errorf("PromptTokens = %d, want %d", summary.PromptTokens, wantPrompt)
+	}
+	if summary.CacheCreationTokens != wantCacheCreation {
+		t.Errorf("CacheCreationTokens = %d, want %d", summary.CacheCreationTokens, wantCacheCreation)
+	}
+	if summary.CachedTokens != wantCached {
+		t.Errorf("CachedTokens = %d, want %d", summary.CachedTokens, wantCached)
 	}
 	if summary.CompletionTokens != wantCompletion {
 		t.Errorf("CompletionTokens = %d, want %d", summary.CompletionTokens, wantCompletion)

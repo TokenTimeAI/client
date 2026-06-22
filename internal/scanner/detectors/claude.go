@@ -49,9 +49,11 @@ type claudeSessionSummary struct {
 	EndedAt          time.Time
 	AgentActive      time.Duration
 	HumanActive      time.Duration
-	PromptTokens     int
-	CompletionTokens int
-	TotalTokens      int
+	PromptTokens        int
+	CompletionTokens    int
+	CachedTokens        int
+	CacheCreationTokens int
+	TotalTokens         int
 	FileEdits        map[string]scanner.FileEdit
 }
 
@@ -132,16 +134,12 @@ func (d *ClaudeDetector) Scan(ctx context.Context, state scanner.SourceState) ([
 			Time:                   float64(endUnix),
 			Timestamp:              summary.EndedAt,
 			Duration:               float64(sessionSeconds),
-			SessionStartedAt:       timePtr(summary.StartedAt),
-			SessionEndedAt:         timePtr(summary.EndedAt),
-			SessionDurationSeconds: intPtr(sessionSeconds),
-			AgentActiveSeconds:     intPtr(agentSeconds),
-			HumanActiveSeconds:     intPtr(humanSeconds),
-			IdleSeconds:            intPtr(idleSeconds),
 			ConversationID:         summary.SessionID,
 			MessageID:              summary.SessionID,
 			PromptTokens:           summary.PromptTokens,
 			CompletionTokens:       summary.CompletionTokens,
+			CachedTokens:           summary.CachedTokens,
+			CacheCreationTokens:    summary.CacheCreationTokens,
 			TotalTokens:            summary.TotalTokens,
 			Model:                  summary.Model,
 			FileEdits:              flattenFileEdits(summary.FileEdits),
@@ -212,10 +210,11 @@ func summarizeClaudeSession(path string) (claudeSessionSummary, bool) {
 					cacheCreate := intValue(usage["cache_creation_input_tokens"])
 					cacheRead := intValue(usage["cache_read_input_tokens"])
 					output := intValue(usage["output_tokens"])
-					totalInput := input + cacheCreate + cacheRead
-					summary.PromptTokens += totalInput
+					summary.PromptTokens += input
+					summary.CacheCreationTokens += cacheCreate
+					summary.CachedTokens += cacheRead
 					summary.CompletionTokens += output
-					summary.TotalTokens += totalInput + output
+					summary.TotalTokens += input + cacheCreate + cacheRead + output
 				}
 			}
 			roleEvents = append(roleEvents, claudeRoleEvent{Role: "assistant", Timestamp: timestamp})
@@ -238,7 +237,7 @@ func summarizeClaudeSession(path string) (claudeSessionSummary, bool) {
 	}
 
 	if summary.TotalTokens == 0 {
-		summary.TotalTokens = summary.PromptTokens + summary.CompletionTokens
+		summary.TotalTokens = summary.PromptTokens + summary.CacheCreationTokens + summary.CachedTokens + summary.CompletionTokens
 	}
 	if summary.SessionID == "" || summary.EndedAt.IsZero() {
 		return claudeSessionSummary{}, false

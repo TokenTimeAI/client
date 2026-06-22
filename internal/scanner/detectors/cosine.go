@@ -129,10 +129,6 @@ func (d *CosineDetector) Scan(ctx context.Context, state scanner.SourceState) ([
 		if !md.TimeEnded.IsZero() {
 			endedAt = md.TimeEnded.UTC()
 		}
-		startedAt := endedAt
-		if !md.TimeStarted.IsZero() {
-			startedAt = md.TimeStarted.UTC()
-		}
 
 		result := scanner.ScanResult{
 			AgentType:              "cosine",
@@ -141,9 +137,6 @@ func (d *CosineDetector) Scan(ctx context.Context, state scanner.SourceState) ([
 			Time:                   float64(endedAt.Unix()),
 			Timestamp:              endedAt,
 			Duration:               float64(md.DurationSeconds),
-			SessionStartedAt:       timePtr(startedAt),
-			SessionEndedAt:         timePtr(endedAt),
-			SessionDurationSeconds: intPtr(md.DurationSeconds),
 			ConversationID:         sessionID,
 			MessageID:              sessionID,
 			PromptTokens:           md.PromptTokens,
@@ -158,16 +151,6 @@ func (d *CosineDetector) Scan(ctx context.Context, state scanner.SourceState) ([
 				"title": md.Title,
 			},
 		}
-		if md.AgentActiveSeconds > 0 {
-			result.AgentActiveSeconds = intPtr(md.AgentActiveSeconds)
-		}
-		if md.HumanActiveSeconds > 0 {
-			result.HumanActiveSeconds = intPtr(md.HumanActiveSeconds)
-		}
-		if md.IdleSeconds > 0 {
-			result.IdleSeconds = intPtr(md.IdleSeconds)
-		}
-
 		results = append(results, result)
 		newState.LastScanTime = entry.EndUnix
 		newState.LastRecordID = sessionID

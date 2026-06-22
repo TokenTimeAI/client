@@ -20,15 +20,9 @@ type Event struct {
 	Branch                 string         `json:"branch,omitempty"`
 	Language               string         `json:"language,omitempty"`
 	AgentType              string         `json:"agent_type,omitempty"`
-	Time                   float64        `json:"time"`
-	Duration               float64        `json:"duration,omitempty"`
-	SessionStartedAt       *string        `json:"session_started_at,omitempty"`
-	SessionEndedAt         *string        `json:"session_ended_at,omitempty"`
-	SessionDurationSeconds *int           `json:"session_duration_seconds,omitempty"`
-	AgentActiveSeconds     *int           `json:"agent_active_seconds,omitempty"`
-	HumanActiveSeconds     *int           `json:"human_active_seconds,omitempty"`
-	IdleSeconds            *int           `json:"idle_seconds,omitempty"`
-	IsWrite                bool           `json:"is_write,omitempty"`
+	Time        float64        `json:"time"`
+	Duration    float64        `json:"duration,omitempty"`
+	IsWrite     bool           `json:"is_write,omitempty"`
 	TokensUsed             int            `json:"tokens_used,omitempty"`
 	LinesAdded             int            `json:"lines_added,omitempty"`
 	LinesDeleted           int            `json:"lines_deleted,omitempty"`
@@ -38,9 +32,12 @@ type Event struct {
 	// Conversation tracking fields
 	ConversationID   string `json:"conversation_id,omitempty"`
 	MessageID        string `json:"message_id,omitempty"`
-	PromptTokens     int    `json:"prompt_tokens,omitempty"`
-	CompletionTokens int    `json:"completion_tokens,omitempty"`
-	TotalTokens      int    `json:"total_tokens,omitempty"`
+	PromptTokens          int    `json:"prompt_tokens,omitempty"`
+	CompletionTokens      int    `json:"completion_tokens,omitempty"`
+	CachedTokens          int    `json:"cached_tokens,omitempty"`
+	CacheCreationTokens   int    `json:"cache_creation_tokens,omitempty"`
+	ReasoningTokens       int    `json:"reasoning_tokens,omitempty"`
+	TotalTokens           int    `json:"total_tokens,omitempty"`
 	Model            string `json:"model,omitempty"`
 	ImportRunID      string `json:"import_run_id,omitempty"`
 	SourceFingerprint string `json:"source_fingerprint,omitempty"`
@@ -167,12 +164,6 @@ func parseEvent(line []byte) (Event, error) {
 		AgentType:              getString(body, "agent_type"),
 		Time:                   getFloat(body, "time"),
 		Duration:               getFloat(body, "duration"),
-		SessionStartedAt:       getOptionalString(body, "session_started_at"),
-		SessionEndedAt:         getOptionalString(body, "session_ended_at"),
-		SessionDurationSeconds: getOptionalInt(body, "session_duration_seconds"),
-		AgentActiveSeconds:     getOptionalInt(body, "agent_active_seconds"),
-		HumanActiveSeconds:     getOptionalInt(body, "human_active_seconds"),
-		IdleSeconds:            getOptionalInt(body, "idle_seconds"),
 		IsWrite:                getBool(body, "is_write"),
 		TokensUsed:             getInt(body, "tokens_used"),
 		LinesAdded:             getInt(body, "lines_added"),
@@ -183,6 +174,9 @@ func parseEvent(line []byte) (Event, error) {
 		MessageID:              getString(body, "message_id"),
 		PromptTokens:           getInt(body, "prompt_tokens"),
 		CompletionTokens:       getInt(body, "completion_tokens"),
+		CachedTokens:           getInt(body, "cached_tokens"),
+		CacheCreationTokens:    getInt(body, "cache_creation_tokens"),
+		ReasoningTokens:        getInt(body, "reasoning_tokens"),
 		TotalTokens:            getInt(body, "total_tokens"),
 		Model:                  getString(body, "model"),
 		ImportRunID:            getString(body, "import_run_id"),

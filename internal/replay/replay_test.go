@@ -83,16 +83,12 @@ func TestRunCompletesAndReportsSummary(t *testing.T) {
 		t.Fatalf("save live state: %v", err)
 	}
 
-	endedAt := time.Now().UTC()
-	duration := 60
 	result := scanner.ScanResult{
 		AgentType:              "codex",
 		Entity:                 "conversation-1",
 		Type:                   "conversation",
 		Time:                   float64(time.Now().Unix()),
 		Timestamp:              time.Now().UTC(),
-		SessionEndedAt:         &endedAt,
-		SessionDurationSeconds: &duration,
 		SourceFingerprint:      "fp-1",
 	}
 

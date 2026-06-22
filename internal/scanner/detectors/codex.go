@@ -55,9 +55,12 @@ type codexSessionSummary struct {
 	EndedAt          time.Time
 	AgentActive      time.Duration
 	HumanActive      time.Duration
-	PromptTokens     int
-	CompletionTokens int
-	TotalTokens      int
+	PromptTokens        int
+	CompletionTokens    int
+	CachedTokens        int
+	CacheCreationTokens int
+	ReasoningTokens     int
+	TotalTokens         int
 	TokensKnown      bool
 	HasCumulative    bool
 	FileEdits        map[string]scanner.FileEdit
@@ -69,9 +72,12 @@ type codexTokenInfo struct {
 }
 
 type codexTokenUsage struct {
-	InputTokens  int `json:"input_tokens"`
-	OutputTokens int `json:"output_tokens"`
-	TotalTokens  int `json:"total_tokens"`
+	InputTokens           int `json:"input_tokens"`
+	CachedInputTokens     int `json:"cached_input_tokens"`
+	CacheReadInputTokens  int `json:"cache_read_input_tokens"`
+	OutputTokens          int `json:"output_tokens"`
+	ReasoningOutputTokens int `json:"reasoning_output_tokens"`
+	TotalTokens           int `json:"total_tokens"`
 }
 
 func (d *CodexDetector) Scan(ctx context.Context, state scanner.SourceState) ([]scanner.ScanResult, scanner.SourceState, error) {
@@ -143,16 +149,13 @@ func (d *CodexDetector) Scan(ctx context.Context, state scanner.SourceState) ([]
 			Time:                   float64(endUnix),
 			Timestamp:              summary.EndedAt,
 			Duration:               float64(sessionSeconds),
-			SessionStartedAt:       timePtr(summary.StartedAt),
-			SessionEndedAt:         timePtr(summary.EndedAt),
-			SessionDurationSeconds: intPtr(sessionSeconds),
-			AgentActiveSeconds:     intPtr(agentSeconds),
-			HumanActiveSeconds:     intPtr(humanSeconds),
-			IdleSeconds:            intPtr(idleSeconds),
 			ConversationID:         summary.SessionID,
 			MessageID:              summary.SessionID,
 			PromptTokens:           summary.PromptTokens,
 			CompletionTokens:       summary.CompletionTokens,
+			CachedTokens:           summary.CachedTokens,
+			CacheCreationTokens:    summary.CacheCreationTokens,
+			ReasoningTokens:        summary.ReasoningTokens,
 			TotalTokens:            summary.TotalTokens,
 			Model:                  summary.Model,
 			FileEdits:              flattenFileEdits(summary.FileEdits),
@@ -298,9 +301,7 @@ func summarizeCodexSession(path string, titles map[string]string) (codexSessionS
 					if totalUsage.TotalTokens > 0 {
 						summary.HasCumulative = true
 						if totalUsage.TotalTokens > summary.TotalTokens {
-							summary.PromptTokens = totalUsage.InputTokens
-							summary.CompletionTokens = totalUsage.OutputTokens
-							summary.TotalTokens = totalUsage.TotalTokens
+							applyCodexUsage(&summary, totalUsage, true)
 						}
 						continue
 					}
@@ -309,14 +310,7 @@ func summarizeCodexSession(path string, titles map[string]string) (codexSessionS
 						continue
 					}
 
-					lastUsage := tokenPayload.Info.LastTokenUsage
-					summary.PromptTokens += lastUsage.InputTokens
-					summary.CompletionTokens += lastUsage.OutputTokens
-					if lastUsage.TotalTokens > 0 {
-						summary.TotalTokens += lastUsage.TotalTokens
-					} else {
-						summary.TotalTokens += lastUsage.InputTokens + lastUsage.OutputTokens
-					}
+					applyCodexUsage(&summary, tokenPayload.Info.LastTokenUsage, false)
 				}
 			}
 		}
@@ -330,7 +324,7 @@ func summarizeCodexSession(path string, titles map[string]string) (codexSessionS
 		return codexSessionSummary{}, false
 	}
 	if summary.TotalTokens == 0 && summary.TokensKnown {
-		summary.TotalTokens = summary.PromptTokens + summary.CompletionTokens
+		summary.TotalTokens = summary.PromptTokens + summary.CachedTokens + summary.CacheCreationTokens + summary.CompletionTokens + summary.ReasoningTokens
 	}
 	return summary, true
 }
@@ -363,6 +357,48 @@ func parseCodexResponseItemFileEdits(payloadJSON json.RawMessage) map[string]sca
 
 func init() {
 	scanner.Register(NewCodexDetector)
+}
+
+func codexCachedTokens(usage codexTokenUsage) int {
+	if usage.CachedInputTokens > 0 {
+		return usage.CachedInputTokens
+	}
+	return usage.CacheReadInputTokens
+}
+
+func codexPromptTokens(usage codexTokenUsage) int {
+	cached := codexCachedTokens(usage)
+	prompt := usage.InputTokens - cached
+	if prompt < 0 {
+		return usage.InputTokens
+	}
+	return prompt
+}
+
+func applyCodexUsage(summary *codexSessionSummary, usage codexTokenUsage, replace bool) {
+	prompt := codexPromptTokens(usage)
+	cached := codexCachedTokens(usage)
+	completion := usage.OutputTokens
+	reasoning := usage.ReasoningOutputTokens
+	total := usage.TotalTokens
+	if total == 0 {
+		total = prompt + cached + completion + reasoning
+	}
+
+	if replace {
+		summary.PromptTokens = prompt
+		summary.CachedTokens = cached
+		summary.CompletionTokens = completion
+		summary.ReasoningTokens = reasoning
+		summary.TotalTokens = total
+		return
+	}
+
+	summary.PromptTokens += prompt
+	summary.CachedTokens += cached
+	summary.CompletionTokens += completion
+	summary.ReasoningTokens += reasoning
+	summary.TotalTokens += total
 }
 
 func parseApplyPatch(input string) map[string]scanner.FileEdit {

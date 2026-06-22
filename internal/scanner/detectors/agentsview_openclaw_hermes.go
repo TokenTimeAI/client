@@ -314,10 +314,11 @@ func toolArgumentsMap(value any) map[string]any {
 }
 
 func addUsageSummary(summary *agentsViewGenericSummary, input, output, cacheRead, cacheWrite int) {
-	prompt := input + cacheRead + cacheWrite
-	summary.PromptTokens += prompt
+	summary.PromptTokens += input
+	summary.CachedTokens += cacheRead
+	summary.CacheCreationTokens += cacheWrite
 	summary.CompletionTokens += output
-	summary.TotalTokens += prompt + output
+	summary.TotalTokens += input + cacheRead + cacheWrite + output
 }
 
 func observeAgentTimestamp(raw string, summary *agentsViewGenericSummary) {
@@ -359,13 +360,13 @@ func scanResultFromAgentsViewSummary(agent string, summary agentsViewGenericSumm
 		Time:                   float64(summary.EndedAt.Unix()),
 		Timestamp:              summary.EndedAt,
 		Duration:               float64(sessionSeconds),
-		SessionStartedAt:       timePtr(summary.StartedAt),
-		SessionEndedAt:         timePtr(summary.EndedAt),
-		SessionDurationSeconds: intPtr(sessionSeconds),
 		ConversationID:         summary.SessionID,
 		MessageID:              summary.SessionID,
 		PromptTokens:           summary.PromptTokens,
 		CompletionTokens:       summary.CompletionTokens,
+		CachedTokens:           summary.CachedTokens,
+		CacheCreationTokens:    summary.CacheCreationTokens,
+		ReasoningTokens:        summary.ReasoningTokens,
 		TotalTokens:            summary.TotalTokens,
 		Model:                  summary.Model,
 		FileEdits:              flattenFileEdits(summary.FileEdits),

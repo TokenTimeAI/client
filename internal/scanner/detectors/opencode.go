@@ -226,9 +226,6 @@ func (d *OpenCodeDetector) scanSQLite(ctx context.Context, state scanner.SourceS
 				Model:                  msg.Model,
 				FileEdits:              flattenFileEdits(fileEdits),
 				Project:                projectNameFromPath(worktree),
-				SessionStartedAt:       timePtr(time.UnixMilli(session.TimeCreated).UTC()),
-				SessionEndedAt:         timePtr(time.UnixMilli(session.TimeUpdated).UTC()),
-				SessionDurationSeconds: intPtr(durationSeconds(time.UnixMilli(session.TimeCreated).UTC(), time.UnixMilli(session.TimeUpdated).UTC())),
 				Metadata: map[string]any{
 					"parser": "opencode_sqlite",
 				},

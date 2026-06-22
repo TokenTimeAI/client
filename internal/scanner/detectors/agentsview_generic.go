@@ -36,9 +36,12 @@ type agentsViewGenericSummary struct {
 	StartedAt        time.Time
 	EndedAt          time.Time
 	Model            string
-	PromptTokens     int
-	CompletionTokens int
-	TotalTokens      int
+	PromptTokens        int
+	CompletionTokens    int
+	CachedTokens        int
+	CacheCreationTokens int
+	ReasoningTokens     int
+	TotalTokens         int
 	FileEdits        map[string]scanner.FileEdit
 }
 
@@ -112,14 +115,14 @@ func (d *agentsViewGenericDetector) Scan(ctx context.Context, state scanner.Sour
 			Time:                   float64(endUnix),
 			Timestamp:              summary.EndedAt,
 			Duration:               float64(sessionSeconds),
-			SessionStartedAt:       timePtr(summary.StartedAt),
-			SessionEndedAt:         timePtr(summary.EndedAt),
-			SessionDurationSeconds: intPtr(sessionSeconds),
 			ConversationID:         summary.SessionID,
 			MessageID:              summary.SessionID,
-			PromptTokens:           summary.PromptTokens,
-			CompletionTokens:       summary.CompletionTokens,
-			TotalTokens:            summary.TotalTokens,
+		PromptTokens:           summary.PromptTokens,
+		CompletionTokens:       summary.CompletionTokens,
+		CachedTokens:           summary.CachedTokens,
+		CacheCreationTokens:    summary.CacheCreationTokens,
+		ReasoningTokens:        summary.ReasoningTokens,
+		TotalTokens:            summary.TotalTokens,
 			Model:                  summary.Model,
 			FileEdits:              flattenFileEdits(summary.FileEdits),
 			Project:                project,

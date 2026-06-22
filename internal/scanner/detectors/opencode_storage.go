@@ -62,8 +62,6 @@ func (d *OpenCodeDetector) scanStorage(ctx context.Context, state scanner.Source
 			for _, part := range parts[msg.ID] {
 				mergeFileEdits(fileEdits, openCodeFileEditsFromPart(part.Data))
 			}
-			startedAt := time.UnixMilli(firstNonZeroInt64(session.TimeCreated, msg.TimeCreated)).UTC()
-			endedAt := time.UnixMilli(firstNonZeroInt64(session.TimeUpdated, msg.TimeCreated)).UTC()
 			results = append(results, scanner.ScanResult{
 				AgentType:              "opencode",
 				Type:                   "conversation",
@@ -78,9 +76,6 @@ func (d *OpenCodeDetector) scanStorage(ctx context.Context, state scanner.Source
 				Model:                  msg.Model,
 				FileEdits:              flattenFileEdits(fileEdits),
 				Project:                projectNameFromPath(session.Directory),
-				SessionStartedAt:       timePtr(startedAt),
-				SessionEndedAt:         timePtr(endedAt),
-				SessionDurationSeconds: intPtr(durationSeconds(startedAt, endedAt)),
 				Metadata: map[string]any{
 					"parser": "opencode_storage",
 				},

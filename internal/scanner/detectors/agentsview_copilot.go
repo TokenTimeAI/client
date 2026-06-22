@@ -198,17 +198,23 @@ func visitCopilotShutdown(raw json.RawMessage, summary *agentsViewGenericSummary
 	if err := json.Unmarshal(raw, &data); err != nil {
 		return
 	}
-	var promptTokens, completionTokens int
+	var promptTokens, completionTokens, cachedTokens, cacheCreationTokens, reasoningTokens int
 	for model, metrics := range data.ModelMetrics {
 		if summary.Model == "" {
 			summary.Model = strings.TrimSpace(model)
 		}
 		promptTokens += metrics.Usage.InputTokens
-		completionTokens += metrics.Usage.OutputTokens + metrics.Usage.ReasoningTokens
+		cachedTokens += metrics.Usage.CacheReadTokens
+		cacheCreationTokens += metrics.Usage.CacheWriteTokens
+		completionTokens += metrics.Usage.OutputTokens
+		reasoningTokens += metrics.Usage.ReasoningTokens
 	}
-	if promptTokens != 0 || completionTokens != 0 {
+	if promptTokens != 0 || completionTokens != 0 || cachedTokens != 0 || cacheCreationTokens != 0 || reasoningTokens != 0 {
 		summary.PromptTokens = promptTokens
+		summary.CachedTokens = cachedTokens
+		summary.CacheCreationTokens = cacheCreationTokens
 		summary.CompletionTokens = completionTokens
-		summary.TotalTokens = promptTokens + completionTokens
+		summary.ReasoningTokens = reasoningTokens
+		summary.TotalTokens = promptTokens + cachedTokens + cacheCreationTokens + completionTokens + reasoningTokens
 	}
 }
