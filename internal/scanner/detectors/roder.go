@@ -84,12 +84,16 @@ type roderThreadMetadata struct {
 	UpdatedAt    string              `json:"updated_at"`
 	MessageCount int                 `json:"message_count"`
 	Usage        *roderThreadUsage   `json:"usage"`
+	CostUSD      float64             `json:"cost_usd"`
 }
 
 type roderThreadUsage struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
+	PromptTokens          int     `json:"prompt_tokens"`
+	CompletionTokens      int     `json:"completion_tokens"`
+	TotalTokens           int     `json:"total_tokens"`
+	CachedTokens          int     `json:"cached_tokens"`
+	CacheCreationTokens   int     `json:"cache_creation_tokens"`
+	CostUSD               float64 `json:"cost_usd"`
 }
 
 type roderThreadSummary struct {
@@ -104,6 +108,9 @@ type roderThreadSummary struct {
 	PromptTokens     int
 	CompletionTokens int
 	TotalTokens      int
+	CachedTokens     int
+	CacheCreationTokens int
+	CostUSD          float64
 	AgentActive      time.Duration
 	FileEdits        map[string]scanner.FileEdit
 }
@@ -153,7 +160,10 @@ func (d *RoderDetector) Scan(ctx context.Context, state scanner.SourceState) ([]
 			MessageID:              summary.ThreadID,
 			PromptTokens:           summary.PromptTokens,
 			CompletionTokens:       summary.CompletionTokens,
+			CachedTokens:           summary.CachedTokens,
+			CacheCreationTokens:    summary.CacheCreationTokens,
 			TotalTokens:            summary.TotalTokens,
+			CostUSD:                summary.CostUSD,
 			Model:                  summary.Model,
 			FileEdits:              flattenFileEdits(summary.FileEdits),
 			Project:                projectNameFromPath(summary.Workspace),
@@ -244,10 +254,18 @@ func summarizeRoderThread(threadDir string) (roderThreadSummary, bool, error) {
 	promptTokens := 0
 	completionTokens := 0
 	totalTokens := 0
+	cachedTokens := 0
+	cacheCreationTokens := 0
+	costUSD := metadata.CostUSD
 	if metadata.Usage != nil {
 		promptTokens = metadata.Usage.PromptTokens
 		completionTokens = metadata.Usage.CompletionTokens
 		totalTokens = metadata.Usage.TotalTokens
+		cachedTokens = metadata.Usage.CachedTokens
+		cacheCreationTokens = metadata.Usage.CacheCreationTokens
+		if metadata.Usage.CostUSD > 0 {
+			costUSD = metadata.Usage.CostUSD
+		}
 	}
 	if totalTokens == 0 && metadata.MessageCount == 0 {
 		return roderThreadSummary{}, false, nil
@@ -287,10 +305,13 @@ func summarizeRoderThread(threadDir string) (roderThreadSummary, bool, error) {
 		StartedAt:        startedAt,
 		EndedAt:          endedAt,
 		MessageCount:     metadata.MessageCount,
-		PromptTokens:     promptTokens,
-		CompletionTokens: completionTokens,
-		TotalTokens:      totalTokens,
-		AgentActive:      agentActive,
+		PromptTokens:        promptTokens,
+		CompletionTokens:    completionTokens,
+		TotalTokens:         totalTokens,
+		CachedTokens:        cachedTokens,
+		CacheCreationTokens: cacheCreationTokens,
+		CostUSD:             costUSD,
+		AgentActive:         agentActive,
 		FileEdits:        fileEdits,
 	}, true, nil
 }

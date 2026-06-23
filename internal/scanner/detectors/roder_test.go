@@ -132,3 +132,50 @@ func TestRoderDetectorScanImportsThreads(t *testing.T) {
 		t.Fatalf("state = %#v", state)
 	}
 }
+
+func TestSummarizeRoderThreadUsesReportedCostAndCacheTokens(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	threadDir := filepath.Join(dir, "threads", "thread-with-cost")
+	if err := os.MkdirAll(threadDir, 0o755); err != nil {
+		t.Fatalf("mkdir thread dir: %v", err)
+	}
+
+	metadata := `{
+  "thread_id": "thread-with-cost",
+  "title": "priced thread",
+  "workspace": "/Users/pz/w/roder",
+  "provider": "claude-code",
+  "model": "opus",
+  "created_at": "2026-06-22T14:11:41.952074Z",
+  "updated_at": "2026-06-22T16:04:59.662383Z",
+  "message_count": 2,
+  "cost_usd": 4.56,
+  "usage": {
+    "prompt_tokens": 1000,
+    "completion_tokens": 200,
+    "total_tokens": 5000,
+    "cached_tokens": 3800,
+    "cache_creation_tokens": 0,
+    "cost_usd": 4.56
+  }
+}`
+	if err := os.WriteFile(filepath.Join(threadDir, "metadata.json"), []byte(metadata), 0o644); err != nil {
+		t.Fatalf("write metadata: %v", err)
+	}
+
+	summary, ok, err := summarizeRoderThread(threadDir)
+	if err != nil {
+		t.Fatalf("summarizeRoderThread: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected thread summary")
+	}
+	if summary.CostUSD != 4.56 {
+		t.Fatalf("cost usd = %v", summary.CostUSD)
+	}
+	if summary.CachedTokens != 3800 {
+		t.Fatalf("cached tokens = %d", summary.CachedTokens)
+	}
+}
